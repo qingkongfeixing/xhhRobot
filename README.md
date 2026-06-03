@@ -364,6 +364,14 @@ const GuestPass = "guest"      // ← 改掉
 const GuestToken = "guest-token-change-me"  // ← 改掉
 ```
 
+## 免责声明
+
+本项目仅供个人学习和自用。自动化访问、自动回复、自动生图和频繁请求都可能触发平台风控。请自行控制频率，并遵守小黑盒相关规则。
+
+## 致谢
+
+感谢 [SomeOvO/xhhRobot](https://github.com/SomeOvO/xhhRobot) 原项目提供早期基础思路与实现参考。
+
 ## License
 
 MIT
