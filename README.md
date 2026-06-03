@@ -2,8 +2,6 @@
 
 小黑盒（Xiaoheihe）社区 AI 自动回复机器人——监控 @-mention 并调用 OpenAI 兼容 API 生成评论，同时支持首页帖子自动评论。自带 Vue 3 Web 控制台，所有操作在浏览器中完成。
 
-<img src="docs/images/手机界面.jpeg" alt="手机界面" width="360">
-
 ## 快速开始
 
 全程在浏览器中操作，不需要手动编辑文件。
@@ -48,7 +46,7 @@
 - 主脑 Token 消耗
 - 视觉 Token 消耗
 
-![艾特回复](docs/images/@回复.png)
+<table><tr><td><img src="docs/images/@回复.png" alt="艾特回复" width="480"></td><td><img src="docs/images/手机界面.jpeg" alt="手机界面" width="220"></td></tr></table>
 
 每条消息支持手动 **重发**（绕过 AI 直接用原内容重试），被吞评论会标注 🕵️ 备用号代发标记及替代内容。
 
