@@ -2,7 +2,7 @@
 
 小黑盒（Xiaoheihe）社区 AI 自动回复机器人——监控 @-mention 并调用 OpenAI 兼容 API 生成评论，同时支持首页帖子自动评论。自带 Vue 3 Web 控制台，所有操作在浏览器中完成。
 
-![手机界面](docs/images/手机界面.jpeg)
+<img src="docs/images/手机界面.jpeg" alt="手机界面" width="360">
 
 ## 快速开始
 
