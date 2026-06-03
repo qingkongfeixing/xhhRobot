@@ -17,10 +17,13 @@ xhhRobot.exe
 main
 main.exe
 
-# === 图片/二维码 ===
+# === 图片/二维码（docs/images 放行） ===
 *.png
 *.jpg
 *.jpeg
+!docs/images/*.png
+!docs/images/*.jpg
+!docs/images/*.jpeg
 
 # === IDE 配置 ===
 .idea/
