@@ -46,7 +46,7 @@
 - 主脑 Token 消耗
 - 视觉 Token 消耗
 
-<table><tr><td><img src="docs/images/@回复.png" alt="艾特回复" width="480"></td><td><img src="docs/images/手机界面.jpeg" alt="手机界面" width="220"></td></tr></table>
+<table><tr><td><img src="docs/images/@回复.png" alt="艾特回复" width="480"></td><td><img src="docs/images/手机.jpg" alt="手机界面" width="220"></td></tr></table>
 
 每条消息支持手动 **重发**（绕过 AI 直接用原内容重试），被吞评论会标注 🕵️ 备用号代发标记及替代内容。
 
@@ -370,6 +370,3 @@ const GuestToken = "guest-token-change-me"  // ← 改掉
 
 感谢 [SomeOvO/xhhRobot](https://github.com/SomeOvO/xhhRobot) 原项目提供早期基础思路与实现参考。
 
-## License
-
-MIT
