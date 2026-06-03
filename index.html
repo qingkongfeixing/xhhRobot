@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小黑盒聊天机器人 ✨</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.min.js" crossorigin="anonymous"></script>
+    <style>
+        body, html { height: 100%; margin: 0; background-color: #f4f6f8; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; overflow: hidden; }
+        [v-cloak] { display: none; }
+
+        .text-custom-dark { color: #212529; }
+        .bg-custom-dark { background-color: #212529; color: white; border: none; }
+        .bg-custom-dark:hover { background-color: #343a40; color: white; }
+
+        .login-page { height: 100vh; display: flex; justify-content: center; align-items: center; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); }
+        .login-box { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); width: 380px; text-align: center; border: 1px solid #dee2e6; }
+        .login-box input { margin-bottom: 15px; border-radius: 8px; border: 1px solid #ced4da; }
+
+        #app-main { height: 100vh; display: flex; flex-direction: column; }
+
+        .app-header { background: #ffffff; color: #212529; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-bottom: 1px solid #e1e4e8; z-index: 10; }
+        .app-header h5 { margin: 0; font-size: 1.15rem; }
+        .header-btns button { margin-right: 5px; }
+
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .top-title-bar {
+            display: flex;
+            align-items: center;
+            background: #fafbfc;
+            border-bottom: 1px solid #e1e4e8;
+            flex-shrink: 0;
+            height: 56px;
+        }
+        .title-left {
+            width: 320px;
+            padding: 8px 12px 0 12px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            background: #fafbfc;
+            border-right: 1px solid #e1e4e8;
+            height: 100%;
+        }
+        .title-left .fw-bold { font-size: 0.95rem; }
+        .title-left .badge { font-size: 0.7rem; }
+        .title-right {
+            flex: 1;
+            padding: 0 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+        .title-right h6 {
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .stats-dropdown {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #fdfdfe;
+            border-bottom: 1px solid transparent;
+            width: 100%;
+            flex-shrink: 0;
+        }
+        .stats-dropdown.expanded {
+            max-height: 250px;
+            border-bottom: 1px solid #e1e4e8;
+        }
+
+        .split-layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+        .sidebar {
+            width: 320px;
+            background: white;
+            border-right: 1px solid #e1e4e8;
+            display: flex;
+            flex-direction: column;
+        }
+        .session-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+        .session-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f2f5;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .session-item:hover { background: #f8f9fa; }
+        .session-item.active {
+            background: #f1f3f5;
+            border-left: 4px solid #212529;
+        }
+        .session-title {
+            font-weight: 600;
+            color: #212529;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+        }
+        .session-preview {
+            font-size: 0.8rem;
+            color: #6c757d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 10px;
+        }
+
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f8f9fa;
+        }
+        .chat-history {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .empty-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #adb5bd;
+        }
+
+        .msg-wrapper { display: flex; flex-direction: column; max-width: 85%; }
+        .msg-left { align-self: flex-start; }
+        .msg-right { align-self: flex-end; align-items: flex-end; }
+        .msg-meta { font-size: 0.75rem; color: #868e96; margin-bottom: 5px; display: flex; align-items: center;}
+        .bubble { padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; line-height: 1.5; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+        .bubble-user { background: white; color: #212529; border-top-left-radius: 2px; border: 1px solid #e1e4e8; }
+        .bubble-taffy { background: #ffffff; color: #212529; border-top-right-radius: 2px; border: 1px solid #dee2e6; border-left: 4px solid #495057; }
+
+        .btn-mobile-back { display: none; }
+
+        .resizer {
+            width: 8px; cursor: col-resize; background-color: transparent; z-index: 10;
+            transition: background-color 0.2s; display: flex; align-items: center; justify-content: center; margin: 0 -4px;
+        }
+        .resizer:hover, .resizer.is-resizing { background-color: rgba(33, 37, 41, 0.2); }
+        .resizer::after { content: '⋮'; color: #6c757d; font-size: 14px; font-weight: bold; }
+        .no-select { user-select: none; }
+
+        @media (min-width: 769px) {
+            .desktop-modal {
+                position: fixed !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%) !important;
+                width: 85vw !important; height: 85vh !important; z-index: 1050 !important; border-radius: 16px !important;
+                box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3) !important; border: 1px solid #dee2e6 !important; background: #ffffff !important;
+            }
+            .desktop-overlay {
+                position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+                background: rgba(0, 0, 0, 0.5) !important; z-index: 1040 !important; backdrop-filter: blur(3px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .app-header { padding: 8px; justify-content: center; }
+            .header-btns { display: flex; width: 100%; gap: 6px; overflow-x: auto; margin: 0; }
+            .header-btns::-webkit-scrollbar { display: none; }
+            .header-btns button { margin-right: 0; flex: 1 1 auto; white-space: nowrap; font-size: 0.75rem !important; padding: 6px 2px !important; letter-spacing: -0.5px; }
+            .sidebar { width: 100% !important; position: absolute; bottom: 0; left: 0; top: 0; }
+            .chat-area { width: 100% !important; position: absolute; height: 100%; right: -100%; top: 0; }
+            .split-layout.chat-active .sidebar { transform: translateX(-100%); }
+            .split-layout.chat-active .chat-area { transform: translateX(-100%); right: -100%; }
+            .btn-mobile-back { display: inline-block !important; min-width: 50px; padding: 0.25rem 0.4rem; }
+            .desktop-overlay, .modal-close-btn { display: none !important; }
+            .title-left {
+                width: 100% !important;
+                border-right: none; /* 可选，去掉右边框更整洁 */
+            }
+            .title-right {
+                overflow: hidden;
+                padding: 0 8px;
+            }
+            .sidebar, .chat-area {
+                transition: transform 0.3s ease;
+            }
+            .session-list {
+                flex: 1;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                min-height: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="app" v-cloak>
+
+    <div v-if="!isLoggedIn" class="login-page">
+        <div class="login-box">
+            <h3 class="mb-4 text-custom-dark fw-bold">🌸 小黑盒控制台</h3>
+            <input type="text" v-model="username" class="form-control form-control-lg" placeholder="账号" @keyup.enter="handleLogin">
+            <input type="password" v-model="password" class="form-control form-control-lg" placeholder="密码" @keyup.enter="handleLogin">
+            <button @click="handleLogin" class="btn bg-custom-dark btn-lg w-100 mt-2 shadow-sm">登 入</button>
+        </div>
+    </div>
+
+    <div v-else id="app-main">
+        <div class="app-header">
+            <h5 class="fw-bold text-custom-dark d-none d-md-block mb-0">🌸 小黑盒聊天机器人</h5>
+            <div class="header-btns">
+                <button class="btn btn-sm fw-bold" :class="replyMode === 'at' ? 'btn-dark' : 'btn-outline-dark'" @click="toggleReplyMode(); blurBtn($event)">💬 {{ replyMode === 'at' ? '艾特回复' : '帖子回复' }}</button>
+                <button @click="switchTab('config')" class="btn btn-sm btn-outline-dark fw-bold" :class="{active: currentTab === 'config'}">⚙️ 配置</button>
+                <button @click="switchTab('tools')" class="btn btn-sm btn-outline-dark fw-bold" :class="{active: currentTab === 'tools'}">🔧 功能</button>
+                <button @click="switchTab('logs')" class="btn btn-sm btn-outline-dark fw-bold" :class="{active: currentTab === 'logs'}">📄 日志</button>
+                <button @click="handleLogout" class="btn btn-sm btn-danger fw-bold">🚪 退出</button>
+            </div>
+        </div>
+
+        <div v-if="currentTab !== 'chat' && isDesktop" class="desktop-overlay" @click="switchTab('chat')"></div>
+
+        <!-- 主容器：新布局 -->
+        <div class="main-container" v-show="currentTab === 'chat' || isDesktop">
+            <!-- 第一行：左侧任务流队列 + 右侧帖子标题 -->
+            <div class="top-title-bar">
+                <!-- @回复 标题栏 -->
+                <template v-if="replyMode === 'at'">
+                <div class="title-left" @click="toggleStats"
+                    :class="{ 'd-none': activeLinkId !== null && !isDesktop }">
+                    <div class="d-flex justify-content-between align-items-center" style="width:100%; margin-bottom: 0;">
+                        <span class="fw-bold" style="font-size: 0.95rem;">💬 任务流队列</span>
+                        <div>
+                            <span class="badge bg-dark me-1" title="涵盖的帖子总数">📄 {{ overviewStats.totalPosts }} 贴</span>
+                            <span class="badge bg-secondary" title="总消息记录">💬 {{ overviewStats.totalMessages }} 录</span>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between" style="font-size: 0.70rem; color: #6c757d; width:100%; margin-top: -4px;">
+                        <span>成功回复: <span class="text-success fw-bold">{{ overviewStats.successReplies }}</span></span>
+                        <span>阻塞排队: <span class="text-warning fw-bold">{{ overviewStats.totalMessages - overviewStats.successReplies }}</span></span>
+                    </div>
+                </div>
+                <div class="title-right" :class="{ 'd-none': !activeGroup && !isDesktop }">
+                    <button v-if="activeGroup" @click="backToList"
+                            class="btn btn-sm btn-outline-dark btn-mobile-back flex-shrink-0 me-1"
+                            style="min-width: 50px;">←</button>
+                    <h6 v-if="activeGroup" class="m-0 fw-bold text-dark text-truncate flex-grow-1" style="min-width: 0;">
+                        {{ activeGroup.link_title || ('帖子 ID: ' + activeGroup.link_id) }}
+                    </h6>
+                    <h6 v-else class="m-0 text-secondary d-none d-md-block flex-grow-1">未选择帖子</h6>
+                    <a v-if="activeGroup" :href="'https://www.xiaoheihe.cn/community/1/list/' + activeGroup.link_id"
+                       target="_blank" class="btn btn-sm btn-dark flex-shrink-0 ms-1" style="min-width: 50px;" @click.stop>→</a>
+                </div>
+                </template>
+                <!-- 帖子回复 标题栏 -->
+                <template v-else>
+                <div class="title-left" @click="toggleStats"
+                    :class="{ 'd-none': activeFeedLinkId !== null && !isDesktop }">
+                    <div class="d-flex justify-content-between align-items-center" style="width:100%; margin-bottom: 0;">
+                        <span class="fw-bold" style="font-size: 0.95rem;">📢 刷帖回复记录</span>
+                        <div>
+                            <span class="badge bg-info me-1">📄 {{ feedStats.totalRecords }} 总</span>
+                            <span class="badge bg-success">✅ {{ feedStats.sentRecords }} 发</span>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between" style="font-size: 0.70rem; color: #6c757d; width:100%; margin-top: -4px;">
+                        <span>试运行: <span class="text-info fw-bold">{{ feedStats.dryRun || 0 }}</span></span>
+                        <span>跳过/失败: <span class="text-warning fw-bold">{{ (feedStats.skipped || 0) + (feedStats.failed || 0) }}</span></span>
+                    </div>
+                </div>
+                <div class="title-right" :class="{ 'd-none': !activeFeedRecord && !isDesktop }">
+                    <button v-if="activeFeedRecord" @click="backToFeedList"
+                            class="btn btn-sm btn-outline-dark btn-mobile-back flex-shrink-0 me-1"
+                            style="min-width: 50px;">←</button>
+                    <h6 v-if="activeFeedRecord" class="m-0 fw-bold text-dark text-truncate flex-grow-1" style="min-width: 0;">
+                        {{ activeFeedRecord.title || ('帖子 ID: ' + activeFeedRecord.link_id) }}
+                    </h6>
+                    <h6 v-else class="m-0 text-secondary d-none d-md-block flex-grow-1">未选择记录</h6>
+                    <a v-if="activeFeedRecord" :href="'https://www.xiaoheihe.cn/community/1/list/' + activeFeedRecord.link_id"
+                       target="_blank" class="btn btn-sm btn-dark flex-shrink-0 ms-1" style="min-width: 50px;" @click.stop>→</a>
+                </div>
+                </template>
+            </div>
+
+            <!-- 第二行：统计横条（全宽） -->
+            <div class="stats-dropdown w-100 shadow-sm" :class="{ 'expanded': showStats }">
+                <div class="p-2 px-3" style="font-size: 0.85rem; max-width: 1100px; margin: 0 auto;">
+                    <div class="row align-items-center m-0">
+                        <div class="col-md-3 d-none d-md-flex align-items-center p-0">
+                            <span class="fw-bold text-dark text-nowrap" style="font-size:0.95rem;">📊 平台算力消耗统计</span>
+                        </div>
+                        <div class="col-12 col-md-5 p-0" v-if="replyMode === 'at'">
+                            <div class="d-flex gap-2 text-center" style="width: 100%;">
+                                <div class="p-1 bg-light rounded border d-flex flex-column justify-content-center" style="height: 60px; flex: 1 1 0; min-width: 0;">
+                                    <div class="text-muted fw-bold" style="font-size:0.7rem;">成功回复</div>
+                                    <div class="fw-bold text-primary" style="font-size: 1.05rem; font-variant-numeric: tabular-nums; white-space: nowrap;">{{ displayStats.replies }} <span style="font-size:0.7rem;">条</span></div>
+                                </div>
+                                <div class="p-1 bg-light rounded border d-flex flex-column justify-content-center" style="height: 60px; flex: 1 1 0; min-width: 0;">
+                                    <div class="text-muted fw-bold" style="font-size:0.7rem;">主脑 Token</div>
+                                    <div class="fw-bold text-success" style="font-size: 1.05rem; font-variant-numeric: tabular-nums; white-space: nowrap;">{{ displayStats.mainTokens }}</div>
+                                </div>
+                                <div class="p-1 bg-light rounded border d-flex flex-column justify-content-center" style="height: 60px; flex: 1 1 0; min-width: 0;">
+                                    <div class="text-muted fw-bold" style="font-size:0.7rem;">视觉 Token</div>
+                                    <div class="fw-bold text-warning" style="font-size: 1.05rem; font-variant-numeric: tabular-nums; white-space: nowrap;">{{ displayStats.visionTokens }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-5 p-0" v-else>
+                            <div class="d-flex gap-2 text-center" style="width: 100%;">
+                                <div class="p-1 bg-light rounded border d-flex flex-column justify-content-center" style="height: 60px; flex: 1 1 0; min-width: 0;">
+                                    <div class="text-muted fw-bold" style="font-size:0.7rem;">成功刷帖</div>
+                                    <div class="fw-bold text-primary" style="font-size: 1.05rem; font-variant-numeric: tabular-nums; white-space: nowrap;">{{ feedStats.sent }} <span style="font-size:0.7rem;">条</span></div>
+                                </div>
+                                <div class="p-1 bg-light rounded border d-flex flex-column justify-content-center" style="height: 60px; flex: 1 1 0; min-width: 0;">
+                                    <div class="text-muted fw-bold" style="font-size:0.7rem;">主脑 Token</div>
+                                    <div class="fw-bold text-success" style="font-size: 1.05rem; font-variant-numeric: tabular-nums; white-space: nowrap;">{{ feedStats.mainTokens }}</div>
+                                </div>
+                                <div class="p-1 bg-light rounded border d-flex flex-column justify-content-center" style="height: 60px; flex: 1 1 0; min-width: 0;">
+                                    <div class="text-muted fw-bold" style="font-size:0.7rem;">视觉 Token</div>
+                                    <div class="fw-bold text-warning" style="font-size: 1.05rem; font-variant-numeric: tabular-nums; white-space: nowrap;">{{ feedStats.visionTokens }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4 p-0 d-flex align-items-center justify-content-md-end justify-content-center gap-2 mt-2 mt-md-0 position-relative">
+                            <div class="btn-group btn-group-sm flex-shrink-0">
+                                <button class="btn py-0 px-2 fw-bold" :class="statPeriod === 'day' ? 'btn-dark' : 'btn-outline-dark'" @click.stop="statPeriod = 'day'; blurBtn($event)">今日</button>
+                                <button class="btn py-0 px-2 fw-bold" :class="statPeriod === 'week' ? 'btn-dark' : 'btn-outline-dark'" @click.stop="statPeriod = 'week'; blurBtn($event)">本周</button>
+                                <button class="btn py-0 px-2 fw-bold" :class="statPeriod === 'month' ? 'btn-dark' : 'btn-outline-dark'" @click.stop="statPeriod = 'month'; blurBtn($event)">本月</button>
+                                <button v-if="isDesktop" class="btn py-0 px-2 fw-bold" :class="statPeriod === 'custom' ? 'btn-dark' : 'btn-outline-dark'" @click.stop="statPeriod = 'custom'; blurBtn($event)">查某天</button>
+                            </div>
+                            <input v-if="isDesktop" type="date" v-model="customDate" class="form-control form-control-sm shadow-sm flex-shrink-0" :style="{ visibility: statPeriod === 'custom' ? 'visible' : 'hidden', width: '130px', fontWeight: 'bold', padding: '0.15rem 0.4rem' }" :max="todayLocalStr">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 第三行：左右内容区（侧边栏 + 聊天区） -->
+            <div class="split-layout" :class="{ 'chat-active': activeLinkId !== null || activeFeedLinkId !== null }">
+                <div class="sidebar">
+                    <!-- @回复 模式 -->
+                    <div class="session-list" v-if="replyMode === 'at'">
+                        <div v-if="groupedMessages.length === 0" class="text-center text-muted p-4 fs-6">暂无历史排队队列</div>
+                        <div v-for="group in groupedMessages" :key="group.link_id" class="session-item" :class="{ active: activeLinkId === group.link_id }" @click="selectGroup(group.link_id)">
+                            <div class="session-title">
+                                <span class="fw-bold text-truncate" style="max-width: 170px;" :title="group.link_title || ('帖子 ID: ' + group.link_id)">{{ group.link_title || ('帖子 ID: ' + group.link_id) }}</span>
+                                <span class="badge bg-secondary text-white">{{ group.msgs.length }}</span>
+                            </div>
+                            <div class="session-preview">
+                                <span class="fw-bold text-dark">{{ group.msgs[group.msgs.length-1].user_name || '用户' }}:</span>
+                                {{ cleanText(group.msgs[group.msgs.length-1].comment_text) }}
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 帖子回复 模式 -->
+                    <div class="session-list" v-else>
+                        <div v-if="feedRecords.length === 0" class="text-center text-muted p-4 fs-6">暂无刷帖记录</div>
+                        <div v-for="rec in feedRecords" :key="rec.link_id" class="session-item" :class="{ active: activeFeedLinkId === rec.link_id }" @click="selectFeedRecord(rec.link_id)">
+                            <div class="session-title">
+                                <span class="fw-bold text-truncate" style="max-width: 170px;" :title="rec.post_content || rec.title || ('帖子 ID: ' + rec.link_id)">{{ rec.title || ('帖子 ID: ' + rec.link_id) }}</span>
+                                <span v-if="rec.status === 'dry_run'" class="badge bg-info">试运行</span>
+                                <span v-else-if="rec.status === 'sent'" class="badge bg-success">已发送</span>
+                                <span v-else-if="rec.status === 'skipped'" class="badge bg-secondary">已跳过</span>
+                                <span v-else-if="rec.status === 'failed'" class="badge bg-danger">失败</span>
+                                <span v-else class="badge bg-warning">{{ rec.status }}</span>
+                            </div>
+                            <div class="session-preview">
+                                <span class="text-muted" style="font-size: 0.7rem;">🕒 {{ formatTime(rec.replied_at) }}</span>
+                                <span class="ms-2 text-truncate" style="font-size: 0.75rem;">{{ cleanText(rec.reply_content) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-area">
+                    <!-- @回复 聊天视图 -->
+                    <div class="chat-history" id="chat-box" v-if="replyMode === 'at'">
+                        <template v-if="activeGroup">
+                            <template v-for="msg in activeGroup.msgs" :key="msg.msg_id">
+                                <div class="msg-wrapper msg-left">
+                                    <div class="msg-meta">
+                                        <span class="badge bg-secondary">{{ msg.user_name || '未知用户' }}</span>
+                                        <span class="ms-2" style="font-size: 0.7rem;">UID: {{ msg.user_id }}</span>
+                                        <span class="ms-2 text-muted" style="font-size: 0.7rem;">🕒 {{ formatTime(msg.time) }}</span>
+                                    </div>
+                                    <div class="bubble bubble-user">{{ cleanText(msg.comment_text) }}</div>
+                                </div>
+                                <div class="msg-wrapper msg-right">
+                                    <div class="msg-meta">
+                                        <span class="fw-bold text-dark">🤖 AI回复</span>
+                                        <span class="ms-2 text-muted" style="font-size: 0.7rem;">🕒 {{ formatTime(msg.reply_time) }}</span>
+                                    </div>
+                                    <div class="bubble bubble-taffy">{{ msg.reply_content ? cleanText(msg.reply_content) : '（尚未记录正文...）' }}</div>
+                                    <div class="action-bar mt-1">
+                                        <span v-if="msg.reply_status" class="text-success fw-bold" style="font-size: 0.8rem;">✓ 成功</span>
+                                        <span v-else class="text-warning fw-bold" style="font-size: 0.8rem;">⏳ 阻塞中</span>
+                                        <span v-if="msg.fallback_reply" class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">🕵️ 备用号代发</span>
+                                        <div v-if="msg.fallback_reply && msg.fallback_reply_content" class="bubble bubble-taffy mt-1" style="border-left: 3px solid #ffc107;">{{ cleanText(msg.fallback_reply_content) }}</div>
+                                        <button @click="retryMsg(msg.msg_id)" class="btn btn-sm btn-outline-danger py-0 px-2 ms-2" style="font-size: 0.75rem;">重发</button>
+                                    </div>
+                                </div>
+                            </template>
+                        </template>
+                        <template v-else>
+                            <div class="empty-chat"><h1 style="font-size: 3.5rem; color: #dee2e6;">💻</h1><h6 class="mt-3 text-secondary fw-normal">请在左侧点击任意帖子队列切入视窗</h6></div>
+                        </template>
+                    </div>
+                    <!-- 帖子回复 详情视图 -->
+                    <div class="chat-history" id="chat-box-feed" v-else>
+                        <template v-if="activeFeedRecord">
+                            <div class="msg-wrapper msg-left">
+                                <div class="msg-meta">
+                                    <span class="badge bg-primary">帖子 #{{ activeFeedRecord.link_id }}</span>
+                                    <span class="ms-2 text-muted" style="font-size: 0.7rem;">🕒 {{ formatTime(activeFeedRecord.replied_at) }}</span>
+                                </div>
+                                <div class="bubble bubble-user" style="white-space: pre-wrap;">{{ activeFeedRecord.post_content || activeFeedRecord.title || '（无内容）' }}</div>
+                            </div>
+                            <div class="msg-wrapper msg-right">
+                                <div class="msg-meta">
+                                    <span class="fw-bold text-dark">🤖 AI回复</span>
+                                    <span class="ms-2 text-muted" style="font-size: 0.7rem;">🕒 {{ formatTime(activeFeedRecord.replied_at) }}</span>
+                                    <span v-if="activeFeedRecord.status === 'dry_run'" class="badge bg-info ms-2">试运行</span>
+                                    <span v-else-if="activeFeedRecord.status === 'sent'" class="badge bg-success ms-2">已发送</span>
+                                    <span v-else-if="activeFeedRecord.status === 'skipped'" class="badge bg-secondary ms-2">已跳过</span>
+                                    <span v-else-if="activeFeedRecord.status === 'failed'" class="badge bg-danger ms-2">失败</span>
+                                </div>
+                                <div class="bubble bubble-taffy">{{ activeFeedRecord.reply_content || '（AI 判定跳过此帖子）' }}</div>
+                            </div>
+                        </template>
+                        <template v-else>
+                            <div class="empty-chat"><h1 style="font-size: 3.5rem; color: #dee2e6;">📢</h1><h6 class="mt-3 text-secondary fw-normal">请在左侧点击任意刷帖记录查看详情</h6></div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 配置面板 -->
+        <div v-if="currentTab === 'config'" class="container-fluid p-3 desktop-modal position-relative d-flex flex-column" style="flex:1; background: #fff; overflow-y: auto;">
+            <button class="btn-close position-absolute top-0 end-0 m-3 modal-close-btn" @click="switchTab('chat')"></button>
+            <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2 flex-shrink-0">
+                <h5 class="m-0 fw-bold text-dark" style="font-size:1.05rem;">⚙️ 可视化配置面板</h5>
+                <span class="badge bg-danger" v-if="isGuest">游客不可用</span>
+            </div>
+
+            <div v-if="!isDesktop && !isGuest" class="d-flex gap-2 mb-2 flex-shrink-0 w-100">
+                <button class="btn btn-sm fw-bold text-truncate" style="flex: 1 1 0;" :class="configMobileTab === 'basic' ? 'btn-dark' : 'btn-outline-dark'" @click="configMobileTab = 'basic'; blurBtn($event)">基础设定</button>
+                <button class="btn btn-sm fw-bold text-truncate" style="flex: 1 1 0;" :class="configMobileTab === 'mainPrompt' ? 'btn-dark' : 'btn-outline-dark'" @click="configMobileTab = 'mainPrompt'; blurBtn($event)">主脑模型</button>
+                <button v-if="configObj.ai.vision_mode === 'dual' || !configObj.ai.vision_mode" class="btn btn-sm fw-bold text-truncate" style="flex: 1 1 0;" :class="configMobileTab === 'visionPrompt' ? 'btn-dark' : 'btn-outline-dark'" @click="configMobileTab = 'visionPrompt'; blurBtn($event)">视觉模型</button>
+            </div>
+
+            <div v-if="!isGuest" class="row g-2 flex-grow-1" style="font-size:0.8rem; overflow:hidden;">
+                <div v-if="isDesktop || configMobileTab === 'basic'" class="col-12 col-md-3 d-flex flex-column gap-1" style="overflow-y: auto; height: 100%; padding-right: 5px;">
+                    <div class="card shadow-sm border-0 bg-light flex-shrink-0">
+                        <div class="card-body p-1">
+                            <h6 class="fw-bold text-primary mb-1" style="font-size:0.75rem;">📱 小黑盒基础配置</h6>
+                            <div class="row g-1">
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">轮询时间(秒)</label><input type="number" v-model="configObj.xhh.checkTime" class="form-control form-control-sm py-0"></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">回复延迟(秒)</label><input type="number" v-model="configObj.xhh.replyTime" class="form-control form-control-sm py-0"></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">主人 UID</label><input type="text" v-model="configObj.xhh.owner" class="form-control form-control-sm py-0"></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">仅回复主人 @</label><div class="bg-white border rounded d-flex align-items-center justify-content-center" style="height: 31px;"><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" v-model="configObj.xhh.reply_only_owner" id="replyOnlyOwnerSwitch"><label class="form-check-label text-dark ms-1" for="replyOnlyOwnerSwitch" style="font-size:0.7rem;">{{ configObj.xhh.reply_only_owner ? '开启' : '关闭' }}</label></div></div></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">@回复开始(时)</label><input type="number" v-model="configObj.xhh.replyStartHour" class="form-control form-control-sm py-0" min="0" max="23"></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">@回复结束(时)</label><input type="number" v-model="configObj.xhh.replyEndHour" class="form-control form-control-sm py-0" min="0" max="23"></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">每次回复间隔(秒)</label><input type="number" v-model="configObj.xhh.replyIntervalSeconds" class="form-control form-control-sm py-0" min="0"></div>
+                                <div class="col-12"><label class="form-label small fw-bold text-danger mb-0">🚫 黑名单 UID（逗号分隔）</label><input type="text" v-model="configObj.xhh.blacklist" class="form-control form-control-sm py-0" placeholder="多个UID用英文逗号隔开，如：123456,789012"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card shadow-sm border-0 bg-light flex-shrink-0">
+                        <div class="card-body p-1">
+                            <h6 class="fw-bold text-warning mb-1" style="font-size:0.75rem;">🕵️ 备用账号（影子检测）</h6>
+                            <div class="row g-1">
+                                <div class="col-12"><div class="bg-white border rounded d-flex align-items-center justify-content-start ps-2" style="height: 31px;"><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" v-model="configObj.fallback.enabled" id="fallbackEnabledSwitch"><label class="form-check-label text-dark ms-1 fw-bold" for="fallbackEnabledSwitch" style="font-size:0.7rem;">{{ configObj.fallback.enabled ? '✅ 已开启' : '⏸ 已关闭' }}</label></div></div></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">检测延迟(秒)</label><input type="number" v-model="configObj.fallback.checkDelaySeconds" class="form-control form-control-sm py-0"></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">Cookie 文件</label><input type="text" v-model="configObj.fallback.cookieFile" class="form-control form-control-sm py-0"></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">备用设备 ID</label><input type="text" v-model="configObj.fallback.deviceID" class="form-control form-control-sm py-0"></div>
+                                <div class="col-12"><label class="form-label small fw-bold text-muted mb-0">备用提示词人设 <span class="text-warning">(空=复用主提示词)</span></label><textarea v-model="configObj.fallback.prompt" class="form-control form-control-sm py-0" rows="2" style="font-size:0.65rem;" placeholder="留空则复用主账号提示词"></textarea></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card shadow-sm border-0 bg-light flex-shrink-0">
+                        <div class="card-body p-1">
+                            <h6 class="fw-bold text-info mb-1" style="font-size:0.75rem;">📢 自动刷帖</h6>
+                            <div class="row g-1">
+                                <div class="col-12"><div class="bg-white border rounded d-flex align-items-center justify-content-start ps-2" style="height: 31px;"><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" v-model="configObj.feedReply.enabled" id="feedEnabledSwitch"><label class="form-check-label text-dark ms-1 fw-bold" for="feedEnabledSwitch" style="font-size:0.7rem;">{{ configObj.feedReply.enabled ? '✅ 已开启' : '⏸ 已关闭' }}</label></div></div></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">每次最多(帖)</label><input type="number" v-model="configObj.feedReply.maxPerRun" class="form-control form-control-sm py-0"></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">每日限额(帖)</label><input type="number" v-model="configObj.feedReply.maxPerDay" class="form-control form-control-sm py-0"></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">刷帖开始(时)</label><input type="number" v-model="configObj.feedReply.startHour" class="form-control form-control-sm py-0" min="0" max="23"></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">刷帖结束(时)</label><input type="number" v-model="configObj.feedReply.endHour" class="form-control form-control-sm py-0" min="0" max="23"></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">轮询间隔(秒)</label><input type="number" v-model="configObj.feedReply.interval" class="form-control form-control-sm py-0"></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">试运行</label><div class="bg-white border rounded d-flex align-items-center justify-content-center" style="height: 31px;"><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" v-model="configObj.feedReply.dryRun" id="feedDryRunSwitch"><label class="form-check-label text-dark ms-1" for="feedDryRunSwitch" style="font-size:0.7rem;">{{ configObj.feedReply.dryRun ? '🔒 开' : '🚀 关' }}</label></div></div></div>
+                                <div class="col-6"><button @click="testFeedReply" class="btn btn-sm btn-info w-100 py-1 fw-bold">🧪 手动测试</button></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card shadow-sm border-0 bg-light flex-shrink-0">
+                        <div class="card-body p-1">
+                            <h6 class="fw-bold text-success mb-1" style="font-size:0.75rem;">🤖 AI 模型连接与开关</h6>
+                            <div class="row g-1">
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">主脑模型</label><input type="text" v-model="configObj.ai.model" class="form-control form-control-sm py-0"></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">主脑 API 地址</label><input type="text" v-model="configObj.ai.baseUrl" class="form-control form-control-sm py-0"></div>
+                                <div class="col-12"><label class="form-label small fw-bold text-muted mb-0">主脑 API KEY</label><input type="password" v-model="configObj.ai.token" class="form-control form-control-sm py-0"></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">视觉模式</label><select v-model="configObj.ai.vision_mode" class="form-select form-select-sm py-0"><option value="dual">🔀 双模型（独立视觉+主脑）</option><option value="single">🎯 单多模态（主脑直接看图）</option></select></div>
+                                <template v-if="configObj.ai.vision_mode === 'dual' || !configObj.ai.vision_mode">
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">视觉模型</label><input type="text" v-model="configObj.ai.vision_model" class="form-control form-control-sm py-0"></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">视觉 API 地址</label><input type="text" v-model="configObj.ai.vision_base_url" class="form-control form-control-sm py-0"></div>
+                                <div class="col-12"><label class="form-label small fw-bold text-muted mb-0">视觉 API KEY</label><input type="password" v-model="configObj.ai.vision_token" class="form-control form-control-sm py-0"></div>
+                                </template>
+                                <div class="col-6 mt-1"><label class="form-label small fw-bold text-muted mb-0">原帖识图上限(张)</label><input type="number" v-model="configObj.ai.max_post_images" class="form-control form-control-sm py-0" placeholder="默认 5"></div>
+                                <div class="col-6 mt-1"><label class="form-label small fw-bold text-muted mb-0">评论识图上限(张)</label><input type="number" v-model="configObj.ai.max_comment_images" class="form-control form-control-sm py-0" placeholder="默认 3"></div>
+                                <div class="col-12 mt-1"><div class="d-flex flex-wrap gap-2 bg-white p-1 rounded border"><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" v-model="configObj.ai.enable_vision"><label class="form-check-label text-dark" style="font-size:0.7rem;font-weight:bold;">启用视觉</label></div><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" v-model="configObj.ai.enable_thinking"><label class="form-check-label text-dark" style="font-size:0.7rem;font-weight:bold;">深度思考</label></div><select v-if="configObj.ai.enable_thinking" v-model="configObj.ai.reasoning_effort" class="form-select form-select-sm py-0" style="width:auto;font-size:0.7rem;"><option value="none">none</option><option value="minimal">minimal</option><option value="low">low</option><option value="medium">medium</option><option value="high">high</option><option value="xhigh">xhigh</option></select><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" v-model="configObj.ai.enable_search"><label class="form-check-label text-dark" style="font-size:0.7rem;font-weight:bold;">联网搜梗</label></div></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card shadow-sm border-0 bg-light flex-shrink-0">
+                        <div class="card-body p-1" style="max-height: 120px; overflow-y: auto;">
+                            <div class="d-flex justify-content-between align-items-center mb-1"><h6 class="fw-bold text-warning m-0" style="font-size:0.75rem;">🤬 敏感词替换</h6><button @click="addBannedWord" class="btn btn-xs btn-primary py-0 px-2 fw-bold" style="font-size:0.65rem;">+ 添加</button></div>
+                            <div class="row g-1 align-items-center mb-1" v-for="(item, index) in bannedWordsArr" :key="index"><div class="col-5"><input type="text" v-model="item.key" class="form-control form-control-sm py-0 px-1" placeholder="敏感词"></div><div class="col-1 text-center text-muted" style="font-size:0.7rem;">➔</div><div class="col-5"><input type="text" v-model="item.val" class="form-control form-control-sm py-0 px-1" placeholder="安全词"></div><div class="col-1 text-end"><button @click="removeBannedWord(index)" class="btn btn-sm btn-link text-danger p-0 fw-bold text-decoration-none">❌</button></div></div>
+                            <div v-if="bannedWordsArr.length === 0" class="text-center text-muted py-1" style="font-size:0.7rem;">暂无词条</div>
+                        </div>
+                    </div>
+                    <div class="mt-auto pt-2 pb-1 flex-shrink-0"><button @click="saveConfig" class="btn btn-dark w-100 py-1 fw-bold shadow-sm">💾 保存并热重载配置</button></div>
+                </div>
+                <div v-if="isDesktop || configMobileTab === 'mainPrompt' || configMobileTab === 'visionPrompt'" class="col-12 col-md-9 d-flex gap-2" :style="isDesktop ? 'min-height: 360px; height: 100%;' : 'flex-direction: column; flex: 1; min-height: 0; padding-bottom: 20px;'" ref="splitContainer" :class="{ 'no-select': isResizing }">
+                    <div v-if="isDesktop || configMobileTab === 'mainPrompt'" class="card shadow-sm border-0 bg-light d-flex flex-column flex-shrink-0" :style="isDesktop ? { width: leftPaneWidth + '%', minWidth: '8%', maxWidth: '80%' } : { width: '100%', flex: 1 }"><div class="card-body p-1 d-flex flex-column flex-grow-1"><label class="form-label fw-bold text-dark mb-1" style="font-size:0.75rem;">🎭 主脑模型提示词</label><textarea v-model="configObj.ai.prompt" class="form-control flex-grow-1" style="font-size: 0.8rem; font-family: monospace; resize: none; width: 100%; padding: 6px;" placeholder="在此输入主脑人格..."></textarea></div></div>
+                    <div v-if="isDesktop && (configObj.ai.vision_mode === 'dual' || !configObj.ai.vision_mode)" class="resizer" :class="{ 'is-resizing': isResizing }" @mousedown="startResize"></div>
+                    <div v-if="(isDesktop || configMobileTab === 'visionPrompt') && (configObj.ai.vision_mode === 'dual' || !configObj.ai.vision_mode)" class="card shadow-sm border-0 bg-light d-flex flex-column" :style="isDesktop ? { minWidth: '8%', flex: 1 } : { width: '100%', flex: 1 }"><div class="card-body p-1 d-flex flex-column flex-grow-1"><label class="form-label fw-bold text-dark mb-1" style="font-size:0.75rem;">👁️ 视觉模型提示词</label><textarea v-model="configObj.ai.vision_prompt" class="form-control flex-grow-1" style="font-size: 0.8rem; font-family: monospace; resize: none; width: 100%; padding: 6px;" placeholder="在此输入看图引导词..."></textarea></div></div>
+                </div>
+            </div>
+            <div v-else class="text-center text-muted py-5">⛔ 游客账号无权查看或修改配置</div>
+        </div>
+
+        <!-- 功能面板 -->
+        <div v-if="currentTab === 'tools'" class="container-fluid p-3 desktop-modal position-relative d-flex flex-column" style="flex:1; background: #fff; overflow-y: auto;">
+            <button class="btn-close position-absolute top-0 end-0 m-3 modal-close-btn" @click="switchTab('chat')"></button>
+            <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2 flex-shrink-0">
+                <h5 class="m-0 fw-bold text-dark" style="font-size:1.05rem;">🔧 功能面板 <span class="badge bg-danger fs-6" v-if="isGuest">游客不可用</span></h5>
+            </div>
+
+            <div v-if="!isGuest" class="d-flex gap-2 mb-2 flex-shrink-0 w-100">
+                <button class="btn btn-sm fw-bold" :class="toolsTab === 'qrcode' ? 'btn-dark' : 'btn-outline-dark'" @click="toolsTab = 'qrcode'; blurBtn($event)">📱 扫码登录</button>
+                <button class="btn btn-sm fw-bold" :class="toolsTab === 'aitest' ? 'btn-dark' : 'btn-outline-dark'" @click="toolsTab = 'aitest'; blurBtn($event)">🧪 模型测试</button>
+            </div>
+
+            <div v-if="!isGuest" class="flex-grow-1 d-flex flex-column" style="min-height: 0;">
+
+                <!-- 扫码登录 -->
+                <div v-if="toolsTab === 'qrcode'" class="d-flex justify-content-center gap-4 py-3 flex-wrap">
+
+                    <!-- 主账号 -->
+                    <div class="d-flex flex-column align-items-center">
+                        <h5 class="fw-bold">📱 主账号扫码</h5>
+                        <div class="card mt-2 shadow-sm" style="width: 280px; text-align: center; border-radius: 12px; padding: 16px;">
+                            <img v-if="qrUrl" :src="'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(qrUrl)" alt="QR Code" class="img-fluid border rounded" />
+                            <div v-else class="py-5 text-muted border rounded bg-light">请点击下方按钮获取</div>
+                            <h6 class="mt-3 fw-bold text-dark small" :class="{'text-success': qrStatusMsg.includes('成功')}">{{ qrStatusMsg }}</h6>
+                            <button @click="getQrCode" class="btn btn-dark mt-2 w-100 fw-bold btn-sm">🔄 获取二维码</button>
+                            <small class="text-muted mt-1">→ cookie.json</small>
+                        </div>
+                    </div>
+
+                    <!-- 备用账号 -->
+                    <div class="d-flex flex-column align-items-center">
+                        <h5 class="fw-bold">🕵️ 备用账号扫码</h5>
+                        <div class="card mt-2 shadow-sm" style="width: 280px; text-align: center; border-radius: 12px; padding: 16px;">
+                            <img v-if="fbQrUrl" :src="'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(fbQrUrl)" alt="QR Code" class="img-fluid border rounded" />
+                            <div v-else class="py-5 text-muted border rounded bg-light">请点击下方按钮获取</div>
+                            <h6 class="mt-3 fw-bold text-dark small" :class="{'text-success': fbQrStatus.includes('成功')}">{{ fbQrStatus || '未获取' }}</h6>
+                            <button @click="getFallbackQr" class="btn btn-warning mt-2 w-100 fw-bold btn-sm">🔄 获取二维码</button>
+                            <small class="text-muted mt-1">→ cookie2.json</small>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- 模型测试 -->
+                <div v-if="toolsTab === 'aitest'" class="row m-0 flex-grow-1" style="min-height: 0;">
+                    <!-- 左：输入区 -->
+                    <div class="col-12 col-md-5 pe-md-2 d-flex flex-column" style="min-height: 0;">
+                        <div class="card shadow-sm border-0 bg-light d-flex flex-column flex-grow-1" style="min-height: 0;">
+                            <div class="card-body p-2 d-flex flex-column" style="min-height: 0; overflow-y: auto;">
+                                <h6 class="fw-bold text-dark mb-2 flex-shrink-0" style="font-size:0.8rem;">📋 测试参数</h6>
+                                <div class="mb-2 flex-shrink-0">
+                                    <label class="form-label small fw-bold text-muted mb-0">测试模式</label>
+                                    <select v-model="testMode" class="form-select form-select-sm py-0">
+                                        <option value="at">💬 @回复模式</option>
+                                        <option value="feed">📢 刷帖回复模式</option>
+                                    </select>
+                                </div>
+                                <div class="mb-2 flex-shrink-0">
+                                    <label class="form-label small fw-bold text-muted mb-0">帖子标题</label>
+                                    <input type="text" v-model="testTitle" class="form-control form-control-sm py-0" placeholder="可选，模拟帖子标题">
+                                </div>
+                                <div class="mb-2 flex-grow-1 d-flex flex-column" style="min-height: 0;">
+                                    <label class="form-label small fw-bold text-muted mb-0 flex-shrink-0">帖子正文 / 内容</label>
+                                    <textarea v-model="testContent" class="form-control flex-grow-1" style="font-size:0.8rem; resize: none; min-height: 100px;" placeholder="输入帖子正文内容..."></textarea>
+                                </div>
+                                <div class="mb-2 flex-shrink-0" v-if="testMode === 'at'">
+                                    <label class="form-label small fw-bold text-muted mb-0">召唤者说的话 (@你的人说的话)</label>
+                                    <input type="text" v-model="testUserSay" class="form-control form-control-sm py-0" placeholder="例如：塔菲你怎么看这个？">
+                                </div>
+                                <div class="mb-2 flex-shrink-0">
+                                    <label class="form-label small fw-bold text-muted mb-0">上传图片（模拟帖子图片）</label>
+                                    <div class="d-flex flex-wrap gap-2 mt-1">
+                                        <div v-for="(img, idx) in testImagePreviews" :key="idx" class="position-relative" style="width:72px;height:72px;">
+                                            <img :src="img" style="width:100%;height:100%;object-fit:cover;border-radius:6px;border:1px solid #dee2e6;">
+                                            <button @click="removeTestImage(idx)" class="btn-close position-absolute top-0 end-0" style="font-size:0.5rem;width:14px;height:14px;transform:translate(4px,-4px);background:#fff;border-radius:50%;"></button>
+                                        </div>
+                                        <div @click="$refs.testImageInput.click()" style="width:72px;height:72px;border:2px dashed #ced4da;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color 0.2s;" @mouseenter="$event.currentTarget.style.borderColor='#6c757d'" @mouseleave="$event.currentTarget.style.borderColor='#ced4da'">
+                                            <span style="font-size:1.5rem;color:#adb5bd;line-height:1;">+</span>
+                                        </div>
+                                    </div>
+                                    <input type="file" ref="testImageInput" multiple accept="image/*" @change="onTestImagesChange" style="display:none;">
+                                </div>
+                                <button @click="runAiTest" class="btn btn-dark w-100 py-1 fw-bold flex-shrink-0" :disabled="testRunning">
+                                    <span v-if="testRunning"><span class="spinner-border spinner-border-sm me-1"></span>AI 思考中...</span>
+                                    <span v-else>🚀 开始测试</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 右：结果区 -->
+                    <div class="col-12 col-md-7 ps-md-2 mt-2 mt-md-0 d-flex flex-column" style="min-height: 0;">
+                        <div class="card shadow-sm border-0 bg-light d-flex flex-column flex-grow-1" style="min-height: 0;">
+                            <div class="card-body p-2 d-flex flex-column" style="min-height: 0; overflow-y: auto;">
+                                <div v-if="testError" class="alert alert-danger py-1 px-2 small m-0 flex-shrink-0">{{ testError }}</div>
+                                <div v-if="testResult" class="d-flex gap-2 flex-wrap flex-shrink-0 mb-2">
+                                    <span class="badge bg-primary">主脑: {{ testResult.main_tokens }} T</span>
+                                    <span class="badge bg-warning">视觉: {{ testResult.vision_tokens }} T</span>
+                                    <span class="badge bg-secondary">总计: {{ testResult.total_tokens }} T</span>
+                                </div>
+                                <!-- 视觉输出 — 始终显示 -->
+                                <div class="card shadow-sm border-0 bg-white mb-2 flex-shrink-0">
+                                    <div class="card-body p-2">
+                                        <h6 class="fw-bold text-warning mb-1" style="font-size:0.75rem;">👁️ 视觉模型输出</h6>
+                                        <div v-if="testRunning && !(testResult && testResult.vision_desc)" class="text-muted small">等待中...</div>
+                                        <div v-else-if="testResult && testResult.vision_desc" style="font-size:0.8rem; white-space: pre-wrap; word-wrap: break-word; max-height: 180px; overflow-y: auto;">{{ testResult.vision_desc }}</div>
+                                        <div v-else class="text-muted small">无图片输入</div>
+                                    </div>
+                                </div>
+                                <!-- 思考过程 — 始终显示 -->
+                                <div class="card shadow-sm border-0 bg-white mb-2 flex-shrink-0">
+                                    <div class="card-body p-2">
+                                        <h6 class="fw-bold text-info mb-1" style="font-size:0.75rem;">🧠 模型思考过程</h6>
+                                        <div v-if="testRunning && !(testResult && testResult.reasoning)" class="text-muted small">等待中...</div>
+                                        <div v-else-if="testResult && testResult.reasoning" style="font-size:0.8rem; white-space: pre-wrap; word-wrap: break-word; max-height: 200px; overflow-y: auto;">{{ testResult.reasoning }}</div>
+                                        <div v-else class="text-muted small">未开启深度思考或无思考内容</div>
+                                    </div>
+                                </div>
+                                <!-- 最终回复 -->
+                                <div class="card shadow-sm border-0 bg-white flex-grow-1 d-flex flex-column" style="min-height: 0;">
+                                    <div class="card-body p-2 d-flex flex-column flex-grow-1" style="min-height: 0; overflow-y: auto;">
+                                        <h6 class="fw-bold text-success mb-1 flex-shrink-0" style="font-size:0.75rem;">💬 最终回复</h6>
+                                        <div class="flex-grow-1" style="font-size:0.85rem; white-space: pre-wrap; word-wrap: break-word; min-height: 0;">
+                                            <span v-if="testRunning" class="text-muted small">AI 思考中...</span>
+                                            <span v-else-if="testResult">{{ testResult.reply || '（AI 返回空内容）' }}</span>
+                                            <span v-else class="text-muted small">点击"开始测试"开始</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div v-else class="text-center text-muted py-5">⛔ 游客账号无权使用此功能</div>
+        </div>
+
+        <!-- 日志面板 -->
+        <div v-if="currentTab === 'logs'" class="container-fluid p-3 desktop-modal position-relative" style="flex:1; background: #fff; overflow:hidden; display:flex; flex-direction:column;">
+            <button class="btn-close position-absolute top-0 end-0 m-3 modal-close-btn" @click="switchTab('chat')"></button>
+            <div class="d-flex justify-content-between align-items-center mb-2 pe-4"><h5 class="m-0 fw-bold">📄 系统最新日志 <span class="badge bg-danger fs-6" v-if="isGuest">不可用</span></h5><button v-if="!isGuest" @click="loadLogs(true); blurBtn($event)" class="btn btn-sm btn-dark fw-bold">🔄 手动刷新</button></div>
+            <pre class="bg-dark text-light p-3 rounded" style="flex:1; overflow-y: auto; font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; word-wrap: break-word;" id="log-box">{{ logText }}</pre>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.addEventListener('error', function(event) {
+        document.body.innerHTML = "<h3 style='color:red;padding:20px;word-wrap:break-word;'>🚨 发生致命错误: " + event.message + "</h3>";
+    });
+
+    if (typeof Vue === 'undefined') {
+        document.body.innerHTML = "<h2 style='color:red;text-align:center;margin-top:100px;'>🚨 前端依赖组件加载失败</h2>";
+    } else {
+        const { createApp, ref, computed, onMounted, nextTick, watch } = Vue
+        createApp({
+            setup() {
+                const isLoggedIn = ref(false);
+                const username = ref('');
+                const password = ref('');
+                const messages = ref([]);
+                const currentTab = ref('chat');
+                const activeLinkId = ref(null);
+                const replyMode = ref('at'); // 'at' | 'feed'
+                const activeFeedLinkId = ref(null);
+                const feedRecords = ref([]);
+                const showStats = ref(false);
+                const statPeriod = ref('day');
+                const configMobileTab = ref('basic');
+                const customDate = ref(new Date().toISOString().slice(0,10));
+                const displayStats = ref({ replies: 0, mainTokens: 0, visionTokens: 0 });
+                const overviewStats = ref({ totalPosts: 0, totalMessages: 0, successReplies: 0 });
+                const feedStats = ref({ total: 0, sent: 0, dryRun: 0, skipped: 0, failed: 0, mainTokens: 0, visionTokens: 0, totalRecords: 0, sentRecords: 0 });
+
+                const PAGE_SIZE = 50;
+                const hasMore = ref(true);
+                const loadingMore = ref(false);
+                const initialLoading = ref(true);
+                let maxMsgId = 0;
+                let pollTimer = null;
+                let logTimer = null;
+                let isRestoringScroll = false;
+
+                // ---------- 统计数据 ----------
+                const fetchStats = async () => {
+                    if (!safeGetStorage('taffy_token')) return;
+                    try {
+                        let url = `/api/stats?period=${statPeriod.value}`;
+                        if (statPeriod.value === 'custom' && customDate.value) {
+                            url += `&date=${customDate.value}`;
+                        }
+                        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${safeGetStorage('taffy_token')}` } });
+                        if (res.ok) {
+                            const data = await res.json();
+                            displayStats.value = {
+                                replies: data.replies,
+                                mainTokens: data.mainTokens.toLocaleString(),
+                                visionTokens: data.visionTokens.toLocaleString()
+                            };
+                            overviewStats.value = {
+                                totalPosts: data.totalPosts ?? groupedMessages.value.length,
+                                totalMessages: data.totalMessages ?? messages.value.length,
+                                successReplies: data.successReplies ?? messages.value.filter(m => m.reply_status && !(m.reply_content || '').startsWith('【系统提示：')).length
+                            };
+                        }
+                    } catch (e) { console.error("📊 统计数据获取失败:", e); }
+                };
+                const fetchFeedStats = async () => {
+                    if (!safeGetStorage('taffy_token')) return;
+                    try {
+                        let url = `/api/feed-stats?period=${statPeriod.value}`;
+                        if (statPeriod.value === 'custom' && customDate.value) {
+                            url += `&date=${customDate.value}`;
+                        }
+                        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${safeGetStorage('taffy_token')}` } });
+                        if (res.ok) {
+                            const data = await res.json();
+                            feedStats.value = {
+                                total: data.total, sent: data.sent, dryRun: data.dryRun,
+                                skipped: data.skipped, failed: data.failed,
+                                mainTokens: data.mainTokens.toLocaleString(),
+                                visionTokens: data.visionTokens.toLocaleString(),
+                                totalRecords: data.totalRecords, sentRecords: data.sentRecords
+                            };
+                        }
+                    } catch (e) { console.error("📊 刷帖统计获取失败:", e); }
+                };
+                watch(statPeriod, () => { fetchStats(); fetchFeedStats(); });
+                watch(customDate, () => { if (statPeriod.value === 'custom') { fetchStats(); fetchFeedStats(); } });
+
+                // ---------- 配置 ----------
+                const configObj = ref({ xhh: {}, database: {}, ai: {}, fallback: { enabled: false, checkDelaySeconds: 12, cookieFile: 'cookie2.json', deviceID: '', prompt: '' }, feedReply: { enabled: false, startHour: 8, endHour: 23, interval: 900, maxPerRun: 1, maxPerDay: 10, dryRun: true } });
+                const bannedWordsArr = ref([]);
+                const addBannedWord = () => { bannedWordsArr.value.push({ key: '', val: '' }); };
+                const removeBannedWord = (index) => { bannedWordsArr.value.splice(index, 1); };
+                const activeFeedRecord = computed(() => {
+                    if (!activeFeedLinkId.value) return null;
+                    return feedRecords.value.find(r => r.link_id === activeFeedLinkId.value) || null;
+                });
+                const loadFeedRecords = async () => {
+                    if (isGuest.value) return;
+                    try {
+                        const res = await fetch('/api/feed-reply-records', { headers: { 'Authorization': `Bearer ${safeGetStorage('taffy_token')}` } });
+                        if (res.ok) feedRecords.value = await res.json();
+                    } catch(e) {}
+                };
+                const toggleReplyMode = () => {
+                    if (currentTab.value !== 'chat') { switchTab('chat'); return; }
+                    if (replyMode.value === 'at') {
+                        replyMode.value = 'feed';
+                        activeLinkId.value = null;
+                        activeFeedLinkId.value = null;
+                        loadFeedRecords();
+                    } else {
+                        replyMode.value = 'at';
+                        activeLinkId.value = null;
+                        activeFeedLinkId.value = null;
+                    }
+                };
+                const selectFeedRecord = (linkId) => {
+                    if (activeFeedLinkId.value === null) {
+                        try { history.pushState({ view: 'feed-chat' }, '', '#feed-chat'); } catch (e) {}
+                    }
+                    activeFeedLinkId.value = linkId;
+                    activeLinkId.value = null;
+                };
+                const backToFeedList = () => { try { history.back(); } catch (e) { activeFeedLinkId.value = null; } };
+                const loadConfig = async () => {
+                    if (isGuest.value) return;
+                    const res = await fetch('/api/config', { headers: { 'Authorization': `Bearer ${safeGetStorage('taffy_token')}` } });
+                    if (res.ok) {
+                        const data = await res.json();
+                        // 防御性初始化：如果配置文件中缺少 feedReply 节点，补上默认值，防止 Vue 模板报错
+                        if (!data.fallback) {
+                            data.fallback = { enabled: false, checkDelaySeconds: 12, cookieFile: 'cookie2.json', deviceID: '', prompt: '' };
+                        }
+                        if (!data.feedReply) {
+                            data.feedReply = { enabled: false, startHour: 8, endHour: 23, interval: 900, maxPerRun: 1, maxPerDay: 10, dryRun: true };
+                        }
+                        if (!data.ai || !data.ai.vision_mode) {
+                            if (!data.ai) data.ai = {};
+                            data.ai.vision_mode = 'dual';
+                        }
+                        configObj.value = data;
+                        bannedWordsArr.value = Object.entries(data.xhh?.banned_words || {}).map(([k, v]) => ({ key: k, val: v }));
+                    }
+                };
+                const testFeedReply = async () => {
+                    if (isGuest.value) return alert('⛔ 游客无权限');
+                    const res = await fetch('/api/feed-reply-test', { headers: { 'Authorization': `Bearer ${safeGetStorage('taffy_token')}` } });
+                    if (res.ok) {
+                        const data = await res.json();
+                        alert('✅ ' + data.message);
+                    }
+                };
+                const saveConfig = async () => {
+                    const xhhBanned = {};
+                    bannedWordsArr.value.forEach(item => { if (item.key.trim()) xhhBanned[item.key.trim()] = item.val; });
+                    if (configObj.value.xhh) {
+                        configObj.value.xhh.checkTime = Number(configObj.value.xhh.checkTime) || 30;
+                        configObj.value.xhh.replyTime = Number(configObj.value.xhh.replyTime) || 10;
+                        configObj.value.xhh.replyStartHour = Number(configObj.value.xhh.replyStartHour) || 3;
+                        configObj.value.xhh.replyEndHour = Number(configObj.value.xhh.replyEndHour) || 7;
+                        configObj.value.xhh.replyIntervalSeconds = Number(configObj.value.xhh.replyIntervalSeconds) || 15;
+                        configObj.value.xhh.banned_words = xhhBanned;
+                        configObj.value.xhh.reply_only_owner = !!configObj.value.xhh.reply_only_owner;
+                    }
+                    if (configObj.value.ai) {
+                        configObj.value.ai.max_post_images = Number(configObj.value.ai.max_post_images) || 5;
+                        configObj.value.ai.max_comment_images = Number(configObj.value.ai.max_comment_images) || 3;
+                    }
+                    if (configObj.value.fallback) {
+                        configObj.value.fallback.checkDelaySeconds = Number(configObj.value.fallback.checkDelaySeconds) || 12;
+                        configObj.value.fallback.enabled = !!configObj.value.fallback.enabled;
+                    }
+                    if (configObj.value.feedReply) {
+                        configObj.value.feedReply.startHour = Number(configObj.value.feedReply.startHour) || 8;
+                        configObj.value.feedReply.endHour = Number(configObj.value.feedReply.endHour) || 23;
+                        configObj.value.feedReply.interval = Number(configObj.value.feedReply.interval) || 900;
+                        configObj.value.feedReply.maxPerRun = Number(configObj.value.feedReply.maxPerRun) || 1;
+                        configObj.value.feedReply.maxPerDay = Number(configObj.value.feedReply.maxPerDay) || 10;
+                        configObj.value.feedReply.enabled = !!configObj.value.feedReply.enabled;
+                        configObj.value.feedReply.dryRun = !!configObj.value.feedReply.dryRun;
+                    }
+                    const res = await fetch('/api/config', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${safeGetStorage('taffy_token')}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify(configObj.value)
+                    });
+                    if(res.ok) alert('✅ 配置已保存并热重载！');
+                };
+
+                // ---------- 日志 ----------
+                const logText = ref('');
+                const loadLogs = async (forceScroll) => {
+                    const isForce = forceScroll === true;
+                    if (isGuest.value) { logText.value = "⛔ 游客无权限"; return; }
+                    const res = await fetch('/api/logs', { headers: { 'Authorization': `Bearer ${safeGetStorage('taffy_token')}` } });
+                    if (res.ok) {
+                        const newText = await res.text();
+                        const isChanged = logText.value !== newText;
+                        logText.value = newText;
+                        if (isChanged || isForce) {
+                            nextTick(() => {
+                                const box = document.getElementById('log-box');
+                                if (box && (isForce || box.scrollHeight - box.scrollTop <= box.clientHeight + 150))
+                                    box.scrollTop = box.scrollHeight;
+                            });
+                        }
+                    }
+                };
+
+                // ---------- 扫码 ----------
+                const qrUrl = ref('');
+                const qrStatusMsg = ref('请使用小黑盒APP扫码');
+                const toolsTab = ref('aitest');
+                const testMode = ref('at');
+                const testTitle = ref('');
+                const testContent = ref('');
+                const testUserSay = ref('');
+                const testImagePreviews = ref([]);
+                const testImageFiles = ref([]);
+                const testRunning = ref(false);
+                const testResult = ref(null);
+                const testError = ref('');
+                const testImageInput = ref(null);
+
+                const onTestImagesChange = (e) => {
+                    const files = Array.from(e.target.files || []);
+                    testImageFiles.value = [...testImageFiles.value, ...files];
+                    files.forEach(f => {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => testImagePreviews.value.push(ev.target.result);
+                        reader.readAsDataURL(f);
+                    });
+                    if (testImageInput.value) testImageInput.value.value = '';
+                };
+                const removeTestImage = (idx) => {
+                    testImagePreviews.value.splice(idx, 1);
+                    testImageFiles.value.splice(idx, 1);
+                };
+                const runAiTest = async () => {
+                    if (testRunning.value) return;
+                    if (!testTitle.value.trim() && !testContent.value.trim() && testImageFiles.value.length === 0) {
+                        testError.value = '请至少填写标题、正文或上传图片';
+                        return;
+                    }
+                    testRunning.value = true;
+                    testResult.value = null;
+                    testError.value = '';
+                    try {
+                        const form = new FormData();
+                        form.append('title', testTitle.value);
+                        form.append('content', testContent.value);
+                        form.append('mode', testMode.value);
+                        form.append('user_say', testUserSay.value);
+                        testImageFiles.value.forEach(f => form.append('images', f));
+                        const res = await fetch('/api/test-ai', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${safeGetStorage('taffy_token')}` },
+                            body: form
+                        });
+                        if (res.ok) {
+                            testResult.value = await res.json();
+                        } else {
+                            const txt = await res.text();
+                            testError.value = '请求失败: ' + (txt || res.statusText);
+                        }
+                    } catch (e) {
+                        testError.value = '网络异常: ' + e.message;
+                    } finally {
+                        testRunning.value = false;
+                    }
+                };
+                const getQrCode = async () => {
+                    if (isGuest.value) return;
+                    clearInterval(window.qrPollTimer);
+                    qrUrl.value = "";
+                    qrStatusMsg.value = "正在从服务器获取...";
+                    try {
+                        const res = await fetch('/api/qrcode', { headers: { 'Authorization': `Bearer ${safeGetStorage('taffy_token')}` } });
+                        const data = await res.json();
+                        if(data && data.result && data.result.qr_url) {
+                            qrUrl.value = data.result.qr_url;
+                            qrStatusMsg.value = '✅ 获取成功！请扫码';
+                            window.qrPollTimer = setInterval(checkQrStatus, 2000);
+                        } else qrStatusMsg.value = "获取失败";
+                    } catch(e) { qrStatusMsg.value = "请求异常"; }
+                };
+                const checkQrStatus = async () => {
+                    if(!qrUrl.value) return;
+                    try {
+                        const res = await fetch('/api/qrcheck?qr_url=' + encodeURIComponent(qrUrl.value), {
+                            headers: { 'Authorization': `Bearer ${safeGetStorage('taffy_token')}` }
+                        });
+                        const data = await res.json();
+                        if(data && data.result) {
+                            if(data.result.error === 'ok') {
+                                qrStatusMsg.value = `🎉 登录成功！欢迎 [${data.result.nickname}]`;
+                                clearInterval(window.qrPollTimer);
+                                alert("Cookie 已经更新，可以继续挂机了！");
+                            } else if (data.result.error_msg) qrStatusMsg.value = data.result.error_msg;
+                        }
+                    } catch(e) {}
+                };
+
+                // ---------- 备用账号扫码 ----------
+                const fbQrUrl = ref('');
+                const fbQrStatus = ref('');
+                const getFallbackQr = async () => {
+                    if (isGuest.value) return;
+                    clearInterval(window.fbPollTimer);
+                    fbQrUrl.value = "";
+                    fbQrStatus.value = "获取中...";
+                    try {
+                        const res = await fetch('/api/qrcode2', { headers: { 'Authorization': `Bearer ${safeGetStorage('taffy_token')}` } });
+                        const data = await res.json();
+                        if(data && data.result && data.result.qr_url) {
+                            fbQrUrl.value = data.result.qr_url;
+                            fbQrStatus.value = '请用小号扫码';
+                            window.fbPollTimer = setInterval(checkFallbackQr, 2000);
+                        } else fbQrStatus.value = "获取失败";
+                    } catch(e) { fbQrStatus.value = "请求异常"; }
+                };
+                const checkFallbackQr = async () => {
+                    if(!fbQrUrl.value) return;
+                    try {
+                        const res = await fetch('/api/qrcheck2?qr_url=' + encodeURIComponent(fbQrUrl.value), {
+                            headers: { 'Authorization': `Bearer ${safeGetStorage('taffy_token')}` }
+                        });
+                        const data = await res.json();
+                        if(data && data.result) {
+                            if(data.result.error === 'ok') {
+                                fbQrStatus.value = '✅ ' + data.result.nickname + ' 已保存';
+                                clearInterval(window.fbPollTimer);
+                            } else if (data.result.error_msg) fbQrStatus.value = data.result.error_msg;
+                        }
+                    } catch(e) {}
+                };
+
+                // ---------- 重发 ----------
+                const retryMsg = async (msgId) => {
+                    if (isGuest.value) { alert("⛔ 游客无权限"); return; }
+                    if(!confirm(`强制重打消息 ID: ${msgId} 吗？`)) return;
+                    const res = await fetch(`/api/retry?msg_id=${msgId}`, { headers: { 'Authorization': `Bearer ${safeGetStorage('taffy_token')}` } });
+                    if(res.ok) {
+                        alert("✅ 已重置");
+                        // 立即拉取最新数据更新状态
+                        syncMessageStatus();
+                        // 同时拉取最新消息确保头部也有
+                        const freshRes = await fetch(`/api/msgs?limit=${PAGE_SIZE}&offset=0`, {
+                            headers: { 'Authorization': `Bearer ${safeGetStorage('taffy_token')}` }
+                        });
+                        if(freshRes.ok) {
+                            const freshData = await freshRes.json();
+                            if (Array.isArray(freshData)) {
+                                const oldMap = new Map(messages.value.map(m => [m.msg_id, m]));
+                                freshData.forEach(m => oldMap.set(m.msg_id, m));
+                                messages.value = Array.from(oldMap.values()).sort((a,b) => b.msg_id - a.msg_id);
+                                if (freshData.length > 0) maxMsgId = Math.max(...freshData.map(m => m.msg_id));
+                            }
+                        }
+                    }
+                };
+
+                // ---------- 工具 ----------
+                const safeGetStorage = (key) => { try { return localStorage.getItem(key); } catch(e) { return null; } };
+                const safeSetStorage = (key, val) => { try { localStorage.setItem(key, val); } catch(e) {} };
+                const safeRemoveStorage = (key) => { try { localStorage.removeItem(key); } catch(e) {} };
+                const isGuest = computed(() => safeGetStorage('taffy_role') === 'guest');
+                const blurBtn = (e) => { if (e && e.currentTarget) { e.currentTarget.blur(); e.currentTarget.classList.remove('active'); } };
+                const toggleStats = () => { showStats.value = !showStats.value; if (document.activeElement) document.activeElement.blur(); };
+
+                // ---------- 桌面布局 ----------
+                const splitContainer = ref(null);
+                const leftPaneWidth = ref(50);
+                const isResizing = ref(false);
+                const startResize = (e) => { isResizing.value = true; document.addEventListener('mousemove', handleMouseMove); document.addEventListener('mouseup', stopResize); };
+                const handleMouseMove = (e) => {
+                    if (!isResizing.value || !splitContainer.value) return;
+                    const rect = splitContainer.value.getBoundingClientRect();
+                    let percent = (e.clientX - rect.left) / rect.width * 100;
+                    if (percent < 8) percent = 8;
+                    if (percent > 80) percent = 80;
+                    leftPaneWidth.value = percent;
+                };
+                const stopResize = () => { isResizing.value = false; document.removeEventListener('mousemove', handleMouseMove); document.removeEventListener('mouseup', stopResize); };
+                const isDesktop = ref(window.innerWidth > 768);
+                window.addEventListener('resize', () => { isDesktop.value = window.innerWidth > 768; });
+
+                // ---------- 分组 ----------
+                const groupedMessages = computed(() => {
+                    const groups = {};
+                    messages.value.forEach(msg => {
+                        if (!groups[msg.link_id]) groups[msg.link_id] = {
+                            link_id: msg.link_id,
+                            link_title: msg.link_title,
+                            msgs: [],
+                            latest_msg_id: 0
+                        };
+                        if (msg.link_title && !groups[msg.link_id].link_title) groups[msg.link_id].link_title = msg.link_title;
+                        groups[msg.link_id].msgs.push(msg);
+                        if (msg.msg_id > groups[msg.link_id].latest_msg_id) groups[msg.link_id].latest_msg_id = msg.msg_id;
+                    });
+                    const sorted = Object.values(groups).sort((a,b) => b.latest_msg_id - a.latest_msg_id);
+                    sorted.forEach(g => g.msgs.sort((a,b) => a.msg_id - b.msg_id));
+                    return sorted;
+                });
+                const activeGroup = computed(() => activeLinkId.value ? groupedMessages.value.find(g => g.link_id === activeLinkId.value) : null);
+                const selectGroup = (linkId) => {
+                    if (activeLinkId.value === null) {
+                        try { history.pushState({ view: 'chat' }, '', '#chat'); } catch (e) {}
+                    }
+                    activeLinkId.value = linkId;
+                    nextTick(() => {
+                        const box = document.getElementById('chat-box');
+                        if (box) box.scrollTop = box.scrollHeight;
+                    });
+                };
+                const backToList = () => { try { history.back(); } catch (e) { activeLinkId.value = null; } };
+                const cleanText = (text) => text ? text.replace(/<[^>]+>/g, '').trim() || '[纯图片]' : '[空]';
+                const formatTime = (timeData) => {
+                    if (!timeData) return '';
+                    let date = new Date(timeData * (timeData < 10000000000 ? 1000 : 1));
+                    return date.toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+                };
+
+                // ========== 消息加载与同步（彻底修复状态不更新问题） ==========
+                const loadInitialMessages = async () => {
+                    initialLoading.value = true;
+                    try {
+                        const res = await fetch(`/api/msgs?limit=${PAGE_SIZE}&offset=0`, {
+                            headers: { 'Authorization': `Bearer ${safeGetStorage('taffy_token')}` }
+                        });
+                        if (res.status === 401) { handleLogout(); return; }
+                        const data = await res.json();
+                        if (Array.isArray(data)) {
+                            messages.value = data;
+                            hasMore.value = data.length === PAGE_SIZE;
+                            if (data.length > 0) maxMsgId = Math.max(...data.map(m => m.msg_id));
+                        }
+                    } catch (e) { console.error("加载消息失败", e); }
+                    finally { initialLoading.value = false; }
+                };
+
+                const loadMoreMessages = async () => {
+                    if (loadingMore.value || !hasMore.value || isRestoringScroll) return;
+                    const sidebar = document.querySelector('.session-list');
+                    if (!sidebar) return;
+                    const prevScrollTop = sidebar.scrollTop;
+                    loadingMore.value = true;
+                    try {
+                        const offset = messages.value.length;
+                        const res = await fetch(`/api/msgs?limit=${PAGE_SIZE}&offset=${offset}`, {
+                            headers: { 'Authorization': `Bearer ${safeGetStorage('taffy_token')}` }
+                        });
+                        const data = await res.json();
+                        if (Array.isArray(data) && data.length > 0) {
+                            messages.value = [...messages.value, ...data];
+                            hasMore.value = data.length === PAGE_SIZE;
+                            await nextTick();
+                            requestAnimationFrame(() => {
+                                requestAnimationFrame(() => {
+                                    isRestoringScroll = true;
+                                    sidebar.scrollTop = prevScrollTop;
+                                    setTimeout(() => { isRestoringScroll = false; }, 100);
+                                });
+                            });
+                        } else {
+                            hasMore.value = false;
+                        }
+                    } catch (e) { console.error("加载更多消息失败", e); }
+                    finally { loadingMore.value = false; }
+                };
+
+                // 只更新已有消息的状态（不改变数组结构）
+                const syncMessageStatus = async () => {
+                    try {
+                        // 收集需要同步状态的消息ID（阻塞中 或 尚无回复内容）
+                        const pendingIds = [];
+                        for (const msg of messages.value) {
+                            if (!msg.reply_status || !msg.reply_content) {
+                                pendingIds.push(msg.msg_id);
+                            }
+                        }
+                        if (pendingIds.length === 0) return;
+                        // 分批请求，每批最多100个（避免URL过长）
+                        const batchSize = 100;
+                        for (let b = 0; b < pendingIds.length; b += batchSize) {
+                            const batch = pendingIds.slice(b, b + batchSize);
+                            const res = await fetch(`/api/msgs?ids=${batch.join(',')}`, {
+                                headers: { 'Authorization': `Bearer ${safeGetStorage('taffy_token')}` }
+                            });
+                            if (!res.ok) continue;
+                            const freshMsgs = await res.json();
+                            if (!Array.isArray(freshMsgs)) continue;
+                            const updateMap = new Map(freshMsgs.map(m => [m.msg_id, m]));
+                            let changed = false;
+                            for (let i = 0; i < messages.value.length; i++) {
+                                const msg = messages.value[i];
+                                const fresh = updateMap.get(msg.msg_id);
+                                if (fresh && (msg.reply_status !== fresh.reply_status || msg.reply_content !== fresh.reply_content || msg.reply_time !== fresh.reply_time)) {
+                                    messages.value[i] = { ...msg, reply_status: fresh.reply_status, reply_content: fresh.reply_content, reply_time: fresh.reply_time };
+                                    changed = true;
+                                }
+                            }
+                            if (changed) {
+                                messages.value = [...messages.value];
+                            }
+                        }
+                    } catch (e) { console.error("同步消息状态失败", e); }
+                };
+
+                // 轮询：新消息插入头部 + 状态同步
+                const pollUpdates = async () => {
+                    // 状态同步总在执行，切到其他面板也能更新
+                    if (currentTab.value !== 'chat') {
+                        await syncMessageStatus();
+                        return;
+                    }
+                    const sidebar = document.querySelector('.session-list');
+                    const prevScrollTop = sidebar ? sidebar.scrollTop : 0;
+                    const prevScrollHeight = sidebar ? sidebar.scrollHeight : 0;
+
+                    try {
+                        // 1. 拉取新消息（since_id）
+                        const resNew = await fetch(`/api/msgs?since_id=${maxMsgId}`, {
+                            headers: { 'Authorization': `Bearer ${safeGetStorage('taffy_token')}` }
+                        });
+                        if (resNew.status === 401) { handleLogout(); return; }
+                        if (resNew.ok) {
+                            const newMsgs = await resNew.json();
+                            if (Array.isArray(newMsgs) && newMsgs.length > 0) {
+                                const reversed = [...newMsgs].reverse();
+                                messages.value = [...reversed, ...messages.value];
+                                maxMsgId = Math.max(...reversed.map(m => m.msg_id), maxMsgId);
+
+                                // 调整滚动位置
+                                await nextTick();
+                                if (sidebar) {
+                                    requestAnimationFrame(() => {
+                                        requestAnimationFrame(() => {
+                                            const newScrollHeight = sidebar.scrollHeight;
+                                            const added = newScrollHeight - prevScrollHeight;
+                                            if (prevScrollTop < 10) {
+                                                sidebar.scrollTop = 0;
+                                            } else {
+                                                sidebar.scrollTop = prevScrollTop + added;
+                                            }
+                                        });
+                                    });
+                                }
+                            }
+                        }
+
+                        // 2. 同步已有消息的状态
+                        await syncMessageStatus();
+
+                    } catch (e) { console.error("轮询更新失败", e); }
+                };
+
+                // 滚动事件
+                const onSidebarScroll = (e) => {
+                    if (isRestoringScroll) return;
+                    const el = e.target;
+                    if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) {
+                        loadMoreMessages();
+                    }
+                };
+                const bindScroll = () => {
+                    nextTick(() => {
+                        const sidebar = document.querySelector('.session-list');
+                        if (sidebar) {
+                            sidebar.removeEventListener('scroll', onSidebarScroll);
+                            sidebar.addEventListener('scroll', onSidebarScroll);
+                        }
+                    });
+                };
+                watch(messages, bindScroll);
+
+                // ---------- 登录/退出 ----------
+                const handleLogin = async () => {
+                    try {
+                        const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: username.value, password: password.value }) });
+                        const data = await res.json();
+                        if (res.ok && data.success === 'true') {
+                            isLoggedIn.value = true;
+                            safeSetStorage('taffy_token', data.token);
+                            safeSetStorage('taffy_role', data.role);
+                            startApp();
+                        } else alert(data.message || '鉴权失败！');
+                    } catch (e) { alert('网络连接失败。'); }
+                };
+                const handleLogout = () => {
+                    isLoggedIn.value = false;
+                    safeRemoveStorage('taffy_token');
+                    clearInterval(pollTimer);
+                    clearInterval(window.qrPollTimer);
+                    clearInterval(window.fbPollTimer);
+                    clearInterval(logTimer);
+                };
+                const switchTab = (tab) => {
+                    showStats.value = false;
+                    currentTab.value = tab;
+                    clearInterval(logTimer);
+                    if (tab === 'config') { loadConfig(); configMobileTab.value = 'basic'; }
+                    if (tab === 'tools') { toolsTab.value = 'aitest'; }
+                    if (tab === 'logs') { loadLogs(true); logTimer = setInterval(() => loadLogs(false), 1500); }
+                };
+
+                const startApp = () => {
+                    loadInitialMessages();
+                    pollTimer = setInterval(pollUpdates, 8000); // 8秒轮询一次
+                    fetchStats();
+                    fetchFeedStats();
+                    setInterval(fetchStats, 10000);
+                    setInterval(fetchFeedStats, 10000);
+                };
+
+                const todayLocalStr = computed(() => new Date().toLocaleDateString('en-CA'));
+
+                onMounted(() => {
+                    if (safeGetStorage('taffy_token')) {
+                        isLoggedIn.value = true;
+                        startApp();
+                    }
+                    window.addEventListener('popstate', () => {
+                        if (activeLinkId.value !== null) activeLinkId.value = null;
+                        if (activeFeedLinkId.value !== null) activeFeedLinkId.value = null;
+                    });
+                });
+
+                return {
+                    isLoggedIn, username, password, handleLogin, handleLogout, isGuest,
+                    currentTab, switchTab,
+                    messages, groupedMessages, activeLinkId, activeGroup,
+                    selectGroup, backToList, cleanText, formatTime,
+                    showStats, statPeriod, customDate, displayStats, overviewStats, toggleStats,
+                    configObj, bannedWordsArr, addBannedWord, removeBannedWord, testFeedReply, saveConfig, loadConfig,
+                    logText, loadLogs,
+                    qrUrl, qrStatusMsg, getQrCode, fbQrUrl, fbQrStatus, getFallbackQr,
+                    toolsTab, testMode, testTitle, testContent, testUserSay, testImagePreviews, testImageInput, testRunning, testResult, testError,
+                    onTestImagesChange, removeTestImage, runAiTest,
+                    retryMsg,
+                    replyMode, toggleReplyMode, activeFeedLinkId, feedRecords, activeFeedRecord, feedStats, loadFeedRecords, selectFeedRecord, backToFeedList,
+                    isDesktop, splitContainer, leftPaneWidth, isResizing, startResize,
+                    loadingMore, hasMore, initialLoading,
+                    blurBtn, configMobileTab,
+                    todayLocalStr
+                };
+            }
+        }).mount('#app')
+    }
+</script>
+</body>
+</html>
