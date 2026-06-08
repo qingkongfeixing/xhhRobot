@@ -266,6 +266,12 @@ func ReplyWithFallback(text, linkID, replyID, rootID, iscy string) bool {
 		return false
 	}
 
+	// 备用账号也在冷却中，直接放弃
+	if isFallbackAccountCoolingDown() {
+		loger.Loger.Warn("[备]备用账号处于冷却期，跳过回复", zap.Duration("剩余冷却", fallbackAccountCooldownRemaining().Round(time.Second)))
+		return false
+	}
+
 	fallbackLock.Lock()
 	defer fallbackLock.Unlock()
 	loger.Loger.Debug("[备]获得备用账号锁(接替回复)")
@@ -277,6 +283,10 @@ func ReplyWithFallback(text, linkID, replyID, rootID, iscy string) bool {
 	}
 	if status != "ok" {
 		loger.Loger.Error("[备]备用账号回复失败", zap.String("status", status), zap.String("msg", msg))
+		// 【备号限制检测】：备号也被限制时进入冷却
+		if isAccountRestricted(msg) {
+			enterFallbackAccountCooldown(msg)
+		}
 		return false
 	}
 

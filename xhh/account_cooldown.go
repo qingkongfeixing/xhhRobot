@@ -10,7 +10,8 @@ import (
 	"go.uber.org/zap"
 )
 
-var mainAccountCooldownUntil atomic.Int64 // 主账号冷却结束的 unix 时间戳
+var mainAccountCooldownUntil atomic.Int64  // 主账号冷却结束的 unix 时间戳
+var fallbackAccountCooldownUntil atomic.Int64 // 备用账号冷却结束的 unix 时间戳
 
 func mainAccountCooldownRemaining() time.Duration {
 	until := time.Unix(mainAccountCooldownUntil.Load(), 0)
@@ -19,6 +20,15 @@ func mainAccountCooldownRemaining() time.Duration {
 
 func isMainAccountCoolingDown() bool {
 	return mainAccountCooldownRemaining() > 0
+}
+
+func fallbackAccountCooldownRemaining() time.Duration {
+	until := time.Unix(fallbackAccountCooldownUntil.Load(), 0)
+	return time.Until(until)
+}
+
+func isFallbackAccountCoolingDown() bool {
+	return fallbackAccountCooldownRemaining() > 0
 }
 
 func enterMainAccountCooldown(reason string) {
@@ -35,6 +45,20 @@ func enterMainAccountCooldown(reason string) {
 		zap.Time("冷却结束", time.Unix(until, 0)))
 }
 
+func enterFallbackAccountCooldown(reason string) {
+	minutes := config.ConfigStruct.Fallback.MainCooldownMinutes
+	if minutes <= 0 {
+		minutes = 360
+	}
+	duration := time.Duration(minutes) * time.Minute
+	until := time.Now().Add(duration).Unix()
+	fallbackAccountCooldownUntil.Store(until)
+	loger.Loger.Warn("[备]备用账号已被限制评论，进入冷却期",
+		zap.String("原因", reason),
+		zap.Duration("冷却时长", duration),
+		zap.Time("冷却结束", time.Unix(until, 0)))
+}
+
 // isAccountRestricted 检测 API 返回的 msg 是否表示账号被限制评论
 func isAccountRestricted(msg string) bool {
 	if msg == "" {
@@ -46,6 +70,8 @@ func isAccountRestricted(msg string) bool {
 		"账号被封禁",
 		"评论功能被限制",
 		"账号已被禁言",
+		"评论频次异常",
+		"频次异常",
 	}
 	for _, kw := range keywords {
 		if strings.Contains(msg, kw) {

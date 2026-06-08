@@ -92,23 +92,8 @@ type Respo struct {
 
 var DontReply bool
 
-// IsReady 检查核心配置是否就绪，未就绪时静默等待，避免刷屏报错
-func IsReady() bool {
-	if Info.Cookie == "" || config.ConfigStruct.Xhh.BaseUrl == "" || config.ConfigStruct.Xhh.Ver == "" {
-		return false
-	}
-	if !db.IsInited() {
-		return false
-	}
-	return true
-}
-
 func CheckAt() {
 	for {
-		if !IsReady() {
-			time.Sleep(10 * time.Second)
-			continue
-		}
 		var offset int
 		nomore := "false"
 		other := fmt.Sprintf("?message_type=16&offset=%v&limit=20&no_more=%s", offset, nomore)
@@ -180,8 +165,18 @@ func CheckAt() {
 
 func AutoReply() {
 	for {
-		if !IsReady() {
-			time.Sleep(10 * time.Second)
+		// 【双号冷却检测】：主备账号都在冷却期时，直接休眠到冷却结束，完全跳过 AI 调用
+		if isMainAccountCoolingDown() && (!IsFallbackAvailable() || isFallbackAccountCoolingDown()) {
+			sleepDuration := mainAccountCooldownRemaining()
+			if IsFallbackAvailable() {
+				if fb := fallbackAccountCooldownRemaining(); fb < sleepDuration {
+					sleepDuration = fb
+				}
+			}
+			loger.Loger.Warn("[XHH]主备账号均在冷却期，暂停回复",
+				zap.Duration("休眠时长", sleepDuration.Round(time.Second)),
+				zap.Time("预计唤醒", time.Now().Add(sleepDuration)))
+			time.Sleep(sleepDuration)
 			continue
 		}
 
@@ -262,6 +257,13 @@ func AutoReply() {
 					RootText = "【单人模式】"
 				}
 
+				// 【双号冷却】：AI 调用前最终检查，避免浪费 token
+				if isMainAccountCoolingDown() && (!IsFallbackAvailable() || isFallbackAccountCoolingDown()) {
+					loger.Loger.Warn("[XHH]主备账号均在冷却期，跳过 AI 生成", zap.Int("msg_id", v.MsgID))
+					db.MarkReplyFailed(v.MsgID)
+					return
+				}
+
 				// 2. 将图文数据完整传给 AI！
 				result := ai.GetAiReply(Contents, v.Text, top, tags, v.Uid, authorID, RootText, rootImgUrl)
 					ReplyText, mainTokens, visionTokens := result.Text, result.MainTokens, result.VisionTokens
@@ -340,6 +342,13 @@ func AutoReply() {
 						loger.Loger.Info("[主]冷却期使用备用提示词重新生成回复")
 					}
 				}
+				// 【核心优化】：主号+备号都冷却时，后续协程直接跳过，不浪费 AI token
+				if isMainAccountCoolingDown() && (!IsFallbackAvailable() || isFallbackAccountCoolingDown()) {
+					loger.Loger.Warn("[XHH]主备账号均在冷却期，跳过本条消息", zap.Int("msg_id", v.MsgID))
+					db.MarkReplyFailed(v.MsgID)
+					return
+				}
+
 				isok = Reply(finalText, strconv.Itoa(v.LinkID), strconv.Itoa(v.CommentID), strconv.Itoa(v.RootID), "")
 
 				if isok {
@@ -376,6 +385,7 @@ func AutoReply() {
 
 				} else {
 					loger.Loger.Error("[XHH]无法回复评论(接口或网络错误)")
+					db.MarkReplyFailed(v.MsgID) // 失败递增重试计数，超上限自动标记已处理
 				}
 			}(v)
 		}

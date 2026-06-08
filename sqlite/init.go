@@ -51,6 +51,7 @@ func Init() {
 	Db.Exec("ALTER TABLE at ADD COLUMN main_tokens BIGINT DEFAULT 0")
 	Db.Exec("ALTER TABLE at ADD COLUMN vision_tokens BIGINT DEFAULT 0")
 	Db.Exec("ALTER TABLE at ADD COLUMN replied_at BIGINT DEFAULT 0")
+	Db.Exec("ALTER TABLE at ADD COLUMN retry_count INTEGER DEFAULT 0")
 
 	loger.Loger.Info("[SQLite]READY!")
 	loger.Loger.Info("[SQLite]READY!")

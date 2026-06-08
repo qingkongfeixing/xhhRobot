@@ -15,43 +15,26 @@ import (
 
 var cfg = &config.ConfigStruct.DataBase
 
-var dbInited bool
-
 func Init() {
 	switch cfg.Type {
 	case "pg":
 		pg.InitPostgreSQL()
 		MigrateFeedReplyTable()
 		MigrateAtRepliedAt()
-		MigrateAtFallbackReply()
-		MigrateAtFallbackReplyContent()
-		dbInited = true
-		loger.Loger.Info("[DB]PostgreSQL 初始化成功")
+			MigrateAtFallbackReply()
+			MigrateAtFallbackReplyContent()
+			MigrateAtRetryCount()
 		return
 	case "sqlite":
 		sqlite.Init()
 		MigrateFeedReplyTable()
-		MigrateAtFallbackReply()
-		MigrateAtFallbackReplyContent()
-		dbInited = true
-		loger.Loger.Info("[DB]SQLite 初始化成功")
+			MigrateAtFallbackReply()
+			MigrateAtFallbackReplyContent()
+			MigrateAtRetryCount()
 		return
 	default:
-		loger.Loger.Warn("[DB]数据库类型未配置或无效，Web 控制台仍可访问。请在控制台填写配置后重启。")
+		loger.Loger.Fatal("[DB]无效的数据库类型")
 	}
-}
-
-// ReInit 支持 Web 控制台更新配置后重新初始化数据库
-func ReInit() {
-	if dbInited {
-		return
-	}
-	Init()
-}
-
-// IsInited 返回数据库是否已初始化
-func IsInited() bool {
-	return dbInited
 }
 
 func MigrateAtFallbackReply() {
@@ -69,6 +52,15 @@ func MigrateAtFallbackReplyContent() {
 		pg.Conn.Exec(ctx, "ALTER TABLE at ADD COLUMN IF NOT EXISTS fallback_reply_content TEXT DEFAULT ''")
 	} else if cfg.Type == "sqlite" {
 		sqlite.Db.Exec("ALTER TABLE at ADD COLUMN fallback_reply_content TEXT DEFAULT ''")
+	}
+}
+
+func MigrateAtRetryCount() {
+	ctx := context.Background()
+	if cfg.Type == "pg" {
+		pg.Conn.Exec(ctx, "ALTER TABLE at ADD COLUMN IF NOT EXISTS retry_count INTEGER DEFAULT 0")
+	} else if cfg.Type == "sqlite" {
+		sqlite.Db.Exec("ALTER TABLE at ADD COLUMN retry_count INTEGER DEFAULT 0")
 	}
 }
 
@@ -132,6 +124,45 @@ func MarkFallbackReply(msg_id int, content string) {
 		sqlite.Db.Exec("UPDATE at SET fallback_reply=?, fallback_reply_content=? WHERE msg_id=?", 1, content, msg_id)
 	}
 	loger.Loger.Info("[DB]备用账号接替回复已记录", zap.Int("msg_id", msg_id))
+}
+
+// MarkReplyFailed 回复失败时递增重试次数，超过上限则标记为已处理放弃重试
+const MaxRetryCount = 3
+
+func MarkReplyFailed(msg_id int) {
+	ctx := context.Background()
+	if cfg.Type == "pg" {
+		var count int
+		err := pg.Conn.QueryRow(ctx, "UPDATE at SET retry_count = retry_count + 1 WHERE msg_id=$1 RETURNING retry_count", msg_id).Scan(&count)
+		if err != nil {
+			loger.Loger.Error("[DB]MarkReplyFailed pg update failed", zap.Error(err), zap.Int("msg_id", msg_id))
+			return
+		}
+		if count >= MaxRetryCount {
+			now := time.Now().Unix()
+			pg.Conn.Exec(ctx, "UPDATE at SET reply=$1, reply_content=$2, replied_at=$3 WHERE msg_id=$4", true, "[系统] 重试次数超限，已放弃", now, msg_id)
+			loger.Loger.Warn("[DB]回复失败已达上限，标记为已处理", zap.Int("msg_id", msg_id), zap.Int("retry_count", count))
+		} else {
+			loger.Loger.Info("[DB]回复失败，等待重试", zap.Int("msg_id", msg_id), zap.Int("retry_count", count))
+		}
+		return
+	}
+	if cfg.Type == "sqlite" {
+		_, err := sqlite.Db.Exec("UPDATE at SET retry_count = retry_count + 1 WHERE msg_id=?", msg_id)
+		if err != nil {
+			loger.Loger.Error("[DB]MarkReplyFailed sqlite update failed", zap.Error(err), zap.Int("msg_id", msg_id))
+			return
+		}
+		var count int
+		sqlite.Db.QueryRow("SELECT retry_count FROM at WHERE msg_id=?", msg_id).Scan(&count)
+		if count >= MaxRetryCount {
+			now := time.Now().Unix()
+			sqlite.Db.Exec("UPDATE at SET reply=?, reply_content=?, replied_at=? WHERE msg_id=?", true, "[系统] 重试次数超限，已放弃", now, msg_id)
+			loger.Loger.Warn("[DB]回复失败已达上限，标记为已处理", zap.Int("msg_id", msg_id), zap.Int("retry_count", count))
+		} else {
+			loger.Loger.Info("[DB]回复失败，等待重试", zap.Int("msg_id", msg_id), zap.Int("retry_count", count))
+		}
+	}
 }
 
 type CommStruct struct {
