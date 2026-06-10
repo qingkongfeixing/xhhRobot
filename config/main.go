@@ -21,6 +21,7 @@ var ConfigStruct struct {
 		ReplyStartHour      int               `json:"replyStartHour"`
 		ReplyEndHour        int               `json:"replyEndHour"`
 		ReplyIntervalSeconds int             `json:"replyIntervalSeconds"`
+		TypingJitterMax     int             `json:"typingJitterMax"`
 	} `json:"xhh"`
 	DataBase struct {
 		Type   string `json:"type"`
@@ -35,11 +36,14 @@ var ConfigStruct struct {
 		Prompt  string `json:"prompt"`
 		BaseUrl string `json:"baseUrl"`
 		Token   string `json:"token"`
-		VisionModel     string `json:"vision_model"`
-		VisionPrompt    string `json:"vision_prompt"`
-		VisionBaseUrl   string `json:"vision_base_url"`
-		VisionToken     string `json:"vision_token"`
-		VisionMode      string `json:"vision_mode"`
+		VisionModel         string `json:"vision_model"`
+		VisionPrompt        string `json:"vision_prompt"`
+		VisionBaseUrl       string `json:"vision_base_url"`
+		VisionToken         string `json:"vision_token"`
+		VisionFallbackModel    string `json:"vision_fallback_model"`
+		VisionFallbackBaseUrl  string `json:"vision_fallback_base_url"`
+		VisionFallbackToken    string `json:"vision_fallback_token"`
+		VisionMode          string `json:"vision_mode"`
 		EnableVision bool   `json:"enable_vision"`
 		EnableSearch bool   `json:"enable_search"`
 		EnableThinking bool `json:"enable_thinking"`
@@ -63,7 +67,10 @@ var ConfigStruct struct {
 		Interval  int    `json:"interval"`
 		MaxPerRun int    `json:"maxPerRun"`
 		MaxPerDay int    `json:"maxPerDay"`
-		DryRun    bool   `json:"dryRun"`
+		DryRun       bool   `json:"dryRun"`
+			MinPostWords int    `json:"minPostWords"`
+			MaxPostWords int    `json:"maxPostWords"`
+			SummaryMode  bool   `json:"summaryMode"`
 	} `json:"feedReply"`
 }
 
@@ -89,17 +96,11 @@ func InitConfig() {
 		panic(err)
 	}
 
-	if ConfigStruct.Xhh.BaseUrl == "" {
-		ConfigStruct.Xhh.BaseUrl = "https://api.xiaoheihe.cn"
-	}
-	if ConfigStruct.Xhh.Ver == "" {
-		ConfigStruct.Xhh.Ver = "999.0.4"
-	}
-	if ConfigStruct.Xhh.WebVer == "" {
-		ConfigStruct.Xhh.WebVer = "2.5"
-	}
 	if ConfigStruct.Xhh.ReplyIntervalSeconds <= 0 {
 		ConfigStruct.Xhh.ReplyIntervalSeconds = 15
+	}
+	if ConfigStruct.Xhh.TypingJitterMax <= 0 {
+		ConfigStruct.Xhh.TypingJitterMax = 4
 	}
 
 	if ConfigStruct.Ai.VisionMode == "" {
@@ -126,6 +127,9 @@ func InitConfig() {
 		ConfigStruct.FeedReply.DryRun = true
 		ConfigStruct.FeedReply.StartHour = 8
 		ConfigStruct.FeedReply.EndHour = 23
+		ConfigStruct.FeedReply.MinPostWords = 0
+		ConfigStruct.FeedReply.MaxPostWords = 0
+		ConfigStruct.FeedReply.SummaryMode = false
 	}
 
 	loger.Loger.Info("[CFG]Init OK")

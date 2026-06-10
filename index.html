@@ -477,6 +477,7 @@
                                 <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">@回复开始(时)</label><input type="number" v-model="configObj.xhh.replyStartHour" class="form-control form-control-sm py-0" min="0" max="23"></div>
                                 <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">@回复结束(时)</label><input type="number" v-model="configObj.xhh.replyEndHour" class="form-control form-control-sm py-0" min="0" max="23"></div>
                                 <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">每次回复间隔(秒)</label><input type="number" v-model="configObj.xhh.replyIntervalSeconds" class="form-control form-control-sm py-0" min="0"></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">打字随机延迟上限(秒)</label><input type="number" v-model="configObj.xhh.typingJitterMax" class="form-control form-control-sm py-0" min="0"></div>
                                 <div class="col-12"><label class="form-label small fw-bold text-danger mb-0">🚫 黑名单 UID（逗号分隔）</label><input type="text" v-model="configObj.xhh.blacklist" class="form-control form-control-sm py-0" placeholder="多个UID用英文逗号隔开，如：123456,789012"></div>
                             </div>
                         </div>
@@ -504,6 +505,10 @@
                                 <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">刷帖结束(时)</label><input type="number" v-model="configObj.feedReply.endHour" class="form-control form-control-sm py-0" min="0" max="23"></div>
                                 <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">轮询间隔(秒)</label><input type="number" v-model="configObj.feedReply.interval" class="form-control form-control-sm py-0"></div>
                                 <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">试运行</label><div class="bg-white border rounded d-flex align-items-center justify-content-center" style="height: 31px;"><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" v-model="configObj.feedReply.dryRun" id="feedDryRunSwitch"><label class="form-check-label text-dark ms-1" for="feedDryRunSwitch" style="font-size:0.7rem;">{{ configObj.feedReply.dryRun ? '🔒 开' : '🚀 关' }}</label></div></div></div>
+                                <div class="col-12 mt-1"><small class="text-info fw-bold">📏 帖子字数过滤（0=不限制，按字符数计算）</small></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">最低字数</label><input type="number" v-model="configObj.feedReply.minPostWords" class="form-control form-control-sm py-0" min="0" placeholder="0=不限制"></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">最高字数</label><input type="number" v-model="configObj.feedReply.maxPostWords" class="form-control form-control-sm py-0" min="0" placeholder="0=不限制"></div>
+                                <div class="col-12"><div class="bg-white border rounded d-flex align-items-center justify-content-start ps-2" style="height: 31px;"><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" v-model="configObj.feedReply.summaryMode" id="feedSummarySwitch"><label class="form-check-label text-dark ms-1 fw-bold" for="feedSummarySwitch" style="font-size:0.7rem;">{{ configObj.feedReply.summaryMode ? '📝 总结模式' : '💬 评论模式' }}</label></div></div></div>
                                 <div class="col-6"><button @click="testFeedReply" class="btn btn-sm btn-info w-100 py-1 fw-bold">🧪 手动测试</button></div>
                             </div>
                         </div>
@@ -520,6 +525,10 @@
                                 <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">视觉模型</label><input type="text" v-model="configObj.ai.vision_model" class="form-control form-control-sm py-0"></div>
                                 <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">视觉 API 地址</label><input type="text" v-model="configObj.ai.vision_base_url" class="form-control form-control-sm py-0"></div>
                                 <div class="col-12"><label class="form-label small fw-bold text-muted mb-0">视觉 API KEY</label><input type="password" v-model="configObj.ai.vision_token" class="form-control form-control-sm py-0"></div>
+                                <div class="col-12 mt-1"><small class="text-warning fw-bold">🔁 视觉备用模型（主模型解析失败时自动切换）</small></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">备用视觉模型</label><input type="text" v-model="configObj.ai.vision_fallback_model" class="form-control form-control-sm py-0" placeholder="留空则不启用备用"></div>
+                                <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">备用 API 地址</label><input type="text" v-model="configObj.ai.vision_fallback_base_url" class="form-control form-control-sm py-0" placeholder="留空则复用主视觉地址"></div>
+                                <div class="col-12"><label class="form-label small fw-bold text-muted mb-0">备用 API KEY</label><input type="password" v-model="configObj.ai.vision_fallback_token" class="form-control form-control-sm py-0" placeholder="留空则复用主视觉KEY"></div>
                                 </template>
                                 <div class="col-6 mt-1"><label class="form-label small fw-bold text-muted mb-0">原帖识图上限(张)</label><input type="number" v-model="configObj.ai.max_post_images" class="form-control form-control-sm py-0" placeholder="默认 5"></div>
                                 <div class="col-6 mt-1"><label class="form-label small fw-bold text-muted mb-0">评论识图上限(张)</label><input type="number" v-model="configObj.ai.max_comment_images" class="form-control form-control-sm py-0" placeholder="默认 3"></div>
@@ -775,7 +784,7 @@
                 watch(customDate, () => { if (statPeriod.value === 'custom') { fetchStats(); fetchFeedStats(); } });
 
                 // ---------- 配置 ----------
-                const configObj = ref({ xhh: {}, database: {}, ai: {}, fallback: { enabled: false, checkDelaySeconds: 12, cookieFile: 'cookie2.json', deviceID: '', prompt: '' }, feedReply: { enabled: false, startHour: 8, endHour: 23, interval: 900, maxPerRun: 1, maxPerDay: 10, dryRun: true } });
+                const configObj = ref({ xhh: {}, database: {}, ai: {}, fallback: { enabled: false, checkDelaySeconds: 12, cookieFile: 'cookie2.json', deviceID: '', prompt: '' }, feedReply: { enabled: false, startHour: 8, endHour: 23, interval: 900, maxPerRun: 1, maxPerDay: 10, dryRun: true, minPostWords: 0, maxPostWords: 0, summaryMode: false } });
                 const bannedWordsArr = ref([]);
                 const addBannedWord = () => { bannedWordsArr.value.push({ key: '', val: '' }); };
                 const removeBannedWord = (index) => { bannedWordsArr.value.splice(index, 1); };
@@ -821,7 +830,7 @@
                             data.fallback = { enabled: false, checkDelaySeconds: 12, cookieFile: 'cookie2.json', deviceID: '', prompt: '' };
                         }
                         if (!data.feedReply) {
-                            data.feedReply = { enabled: false, startHour: 8, endHour: 23, interval: 900, maxPerRun: 1, maxPerDay: 10, dryRun: true };
+                            data.feedReply = { enabled: false, startHour: 8, endHour: 23, interval: 900, maxPerRun: 1, maxPerDay: 10, dryRun: true, minPostWords: 0, maxPostWords: 0, summaryMode: false };
                         }
                         if (!data.ai || !data.ai.vision_mode) {
                             if (!data.ai) data.ai = {};
@@ -848,6 +857,7 @@
                         configObj.value.xhh.replyStartHour = Number(configObj.value.xhh.replyStartHour) || 3;
                         configObj.value.xhh.replyEndHour = Number(configObj.value.xhh.replyEndHour) || 7;
                         configObj.value.xhh.replyIntervalSeconds = Number(configObj.value.xhh.replyIntervalSeconds) || 15;
+                        configObj.value.xhh.typingJitterMax = Number(configObj.value.xhh.typingJitterMax) || 4;
                         configObj.value.xhh.banned_words = xhhBanned;
                         configObj.value.xhh.reply_only_owner = !!configObj.value.xhh.reply_only_owner;
                     }
@@ -865,8 +875,11 @@
                         configObj.value.feedReply.interval = Number(configObj.value.feedReply.interval) || 900;
                         configObj.value.feedReply.maxPerRun = Number(configObj.value.feedReply.maxPerRun) || 1;
                         configObj.value.feedReply.maxPerDay = Number(configObj.value.feedReply.maxPerDay) || 10;
+                        configObj.value.feedReply.minPostWords = Number(configObj.value.feedReply.minPostWords) || 0;
+                        configObj.value.feedReply.maxPostWords = Number(configObj.value.feedReply.maxPostWords) || 0;
                         configObj.value.feedReply.enabled = !!configObj.value.feedReply.enabled;
                         configObj.value.feedReply.dryRun = !!configObj.value.feedReply.dryRun;
+                        configObj.value.feedReply.summaryMode = !!configObj.value.feedReply.summaryMode;
                     }
                     const res = await fetch('/api/config', {
                         method: 'POST',

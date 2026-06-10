@@ -1,44 +1,23 @@
-# === 敏感文件（含密钥/Cookie） ===
+# 敏感配置和凭证
 config.json
 cookie.json
 cookie2.json
 
-# === 数据库文件 ===
-sql.db
-sql.db-shm
-sql.db-wal
-
-# === 日志 ===
-log/
-
-# === 编译产物 ===
+# 编译产物
+*.exe
 xhhRobot
-xhhRobot.exe
-main
-main.exe
+xhhRobot_test
 
-# === 图片/二维码（docs/images 放行） ===
-*.png
-*.jpg
-*.jpeg
-!docs/images/*.png
-!docs/images/*.jpg
-!docs/images/*.jpeg
+# 日志
+log/
+*.log
 
-# === IDE 配置 ===
+# IDE
 .idea/
+.vscode/
+*.swp
+*.swo
 
-# === Python ===
-__pycache__/
-*.pyc
-
-# === Claude Code 内部文件 ===
-memory/
-CLAUDE.md
-
-# === 独立辅助工具（不上传） ===
-xhh-login-tool/
-
-# === 系统文件 ===
+# OS
 .DS_Store
 Thumbs.db

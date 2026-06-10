@@ -35,6 +35,9 @@
     "vision_prompt": "你是一个多模态视觉分析专家...（在此填写视觉分析提示词）",
     "vision_base_url": "",
     "vision_token": "",
+    "vision_fallback_model": "",
+    "vision_fallback_base_url": "",
+    "vision_fallback_token": "",
     "enable_vision": false,
     "vision_mode": "dual",
     "enable_search": false,
@@ -51,7 +54,10 @@
     "interval": 900,
     "maxPerRun": 1,
     "maxPerDay": 10,
-    "dryRun": false
+    "dryRun": false,
+    "minPostWords": 0,
+    "maxPostWords": 0,
+    "summaryMode": false
   },
   "fallback": {
     "enabled": true,

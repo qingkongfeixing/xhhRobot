@@ -62,6 +62,73 @@ type respStruct struct {
 	} `json:"usage"`
 }
 
+// SendVisionReq 纯视觉请求，不经过主脑路由，用于视觉模型专用通道和备用模型切换
+func SendVisionReq(Model string, BaseUrl string, Token string, Msg []any) (Jresp respStruct) {
+	if Model == "" || BaseUrl == "" {
+		loger.Loger.Error("[Ai]视觉模型配置不完整，跳过视觉请求")
+		return
+	}
+
+	falseVal := false
+	body := ReqBody{
+		Model:          Model,
+		Messages:       Msg,
+		Stream:         false,
+		EnableThinking: &falseVal,
+	}
+
+	reqbody, err := json.Marshal(body)
+	if err != nil {
+		loger.Loger.Error("[Ai-Vision]无法序列化JSON", zap.Error(err))
+		return
+	}
+
+	loger.Loger.Debug("[Ai-Vision]底层网络请求", zap.String("model", Model), zap.String("url", BaseUrl), zap.String("Request", string(reqbody)))
+
+	req, err := http.NewRequest("POST", BaseUrl, bytes.NewReader(reqbody))
+	if err != nil {
+		loger.Loger.Error("[Ai-Vision]无法创建请求", zap.Error(err))
+		return
+	}
+
+	req.Header.Set("Authorization", "Bearer "+Token)
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{
+		Timeout: 60 * time.Second,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		loger.Loger.Error("[Ai-Vision]请求失败！", zap.Error(err))
+		return
+	}
+	defer resp.Body.Close()
+
+	Dresp, err := io.ReadAll(resp.Body)
+	loger.Loger.Debug("[Ai-Vision]底层网络响应", zap.String("Response", string(Dresp)))
+
+	if resp.StatusCode != http.StatusOK {
+		loger.Loger.Error("[Ai-Vision]请求被拒绝或服务器异常",
+			zap.Int("status_code", resp.StatusCode),
+			zap.String("body", string(Dresp)),
+		)
+		return
+	}
+
+	if len(Dresp) == 0 {
+		loger.Loger.Error("[Ai-Vision]接口返回了空的响应体")
+		return
+	}
+
+	err = json.Unmarshal(Dresp, &Jresp)
+	if err != nil {
+		loger.Loger.Error("[Ai-Vision]无法反序列化JSON", zap.Error(err), zap.String("body", string(Dresp)))
+		return
+	}
+
+	return Jresp
+}
+
 func SendReq(Model string, Msg []any) (Jresp respStruct) {
 	if Model == "" {
 		loger.Loger.Fatal("[Ai]请确保配置文件中的模型是存在的")

@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap"
 	"fmt"
 	"runtime/debug"
+	"unicode/utf8"
 )
 
 type feedResponse struct {
@@ -52,10 +53,6 @@ func rawToInt(raw json.RawMessage) int {
 func AutoFeedReply() {
 	time.Sleep(60 * time.Second) // 启动后等待一分钟再开始首次刷帖
 	for {
-		if !IsReady() {
-			time.Sleep(10 * time.Second)
-			continue
-		}
 		processFeedReplyOnce(false)
 		interval := config.ConfigStruct.FeedReply.Interval
 		if interval <= 0 {
@@ -195,6 +192,36 @@ func processFeedReplyOnce(skipTimeCheck bool) {
 			postTitle = link.Title
 		}
 		fmt.Printf("📝 [FeedReply] 正在处理帖子 #%d: %s\n", link.LinkID, postTitle)
+
+		// 帖子字数过滤器：根据配置跳过字数不符合要求的帖子
+		if cfg.MinPostWords > 0 || cfg.MaxPostWords > 0 {
+			postText := extractTextContent(Contents)
+			wordCount := utf8.RuneCountInString(postText)
+			if cfg.MinPostWords > 0 && wordCount < cfg.MinPostWords {
+				fmt.Printf("⏭ [FeedReply] 帖子 %d 字数(%d)低于最低要求(%d)，跳过\n", link.LinkID, wordCount, cfg.MinPostWords)
+				db.SaveFeedReplyRecord(db.FeedReplyRecord{
+					LinkID:       int64(link.LinkID),
+					Title:        postTitle,
+					PostContent:  postText,
+					Status:       "skipped",
+					ReplyContent: fmt.Sprintf("[字数过滤] 字数%d < 最低%d", wordCount, cfg.MinPostWords),
+					RepliedAt:    time.Now().Unix(),
+				})
+				continue
+			}
+			if cfg.MaxPostWords > 0 && wordCount > cfg.MaxPostWords {
+				fmt.Printf("⏭ [FeedReply] 帖子 %d 字数(%d)超过最高限制(%d)，跳过\n", link.LinkID, wordCount, cfg.MaxPostWords)
+				db.SaveFeedReplyRecord(db.FeedReplyRecord{
+					LinkID:       int64(link.LinkID),
+					Title:        postTitle,
+					PostContent:  postText,
+					Status:       "skipped",
+					ReplyContent: fmt.Sprintf("[字数过滤] 字数%d > 最高%d", wordCount, cfg.MaxPostWords),
+					RepliedAt:    time.Now().Unix(),
+				})
+				continue
+			}
+		}
 
 		result := ai.GetAiReply(Contents, "", top, tags, 0, authorID, "【自动刷帖】", "")
 			replyText, mainTokens, visionTokens := result.Text, result.MainTokens, result.VisionTokens

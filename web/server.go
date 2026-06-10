@@ -19,13 +19,13 @@ import (
 	"go.uber.org/zap"
 )
 
-const AdminUser = "admin"
-const AdminPass = "admin123"
-const AdminToken = "admin-token-change-me"
+const AdminUser = "taffy"
+const AdminPass = "taffy123"
+const AdminToken = "taffy-super-secret-token-1885-ADMIN"
 
-const GuestUser = "guest"
-const GuestPass = "guest"
-const GuestToken = "guest-token-change-me"
+const GuestUser = "test"
+const GuestPass = "test"
+const GuestToken = "taffy-super-secret-token-1885-GUEST"
 
 func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -260,7 +260,6 @@ func StartServer() {
 				return
 			}
 			config.InitConfig()
-			db.ReInit()
 			xhh.ReloadBlacklist()
 			w.Header().Set("Content-Type", "application/json")
 			w.Write([]byte(`{"success":true}`))
