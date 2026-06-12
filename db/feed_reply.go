@@ -80,7 +80,7 @@ type FeedReplyWebRecord struct {
 func GetFeedReplyRecords() []FeedReplyWebRecord {
 	ctx := context.Background()
 	if cfg.Type == "pg" {
-		rows, err := pg.Conn.Query(ctx, "SELECT link_id,title,COALESCE(post_content,''),status,COALESCE(reply_content,''),replied_at,COALESCE(main_tokens,0),COALESCE(vision_tokens,0) FROM feed_reply_records ORDER BY replied_at DESC LIMIT 100")
+		rows, err := pg.Conn.Query(ctx, "SELECT link_id,title,COALESCE(post_content,''),status,COALESCE(reply_content,''),replied_at,COALESCE(main_tokens,0),COALESCE(vision_tokens,0) FROM feed_reply_records WHERE status != 'skipped' ORDER BY replied_at DESC LIMIT 100")
 		if err != nil {
 			loger.Loger.Warn("[DB]查询刷帖记录失败", zap.Error(err))
 			return nil
@@ -94,7 +94,7 @@ func GetFeedReplyRecords() []FeedReplyWebRecord {
 		}
 		return recs
 	}
-	rows, err := sqlite.Db.Query("SELECT link_id,title,COALESCE(post_content,''),status,COALESCE(reply_content,''),replied_at,COALESCE(main_tokens,0),COALESCE(vision_tokens,0) FROM feed_reply_records ORDER BY replied_at DESC LIMIT 100")
+	rows, err := sqlite.Db.Query("SELECT link_id,title,COALESCE(post_content,''),status,COALESCE(reply_content,''),replied_at,COALESCE(main_tokens,0),COALESCE(vision_tokens,0) FROM feed_reply_records WHERE status != 'skipped' ORDER BY replied_at DESC LIMIT 100")
 	if err != nil {
 		loger.Loger.Warn("[DB]查询刷帖记录失败", zap.Error(err))
 		return nil

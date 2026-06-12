@@ -71,6 +71,9 @@ var ConfigStruct struct {
 			MinPostWords int    `json:"minPostWords"`
 			MaxPostWords int    `json:"maxPostWords"`
 			SummaryMode  bool   `json:"summaryMode"`
+			SummaryRatio      float64 `json:"summaryRatio"`
+			SummaryMinWords   int     `json:"summaryMinWords"`
+			SummaryMaxWords   int     `json:"summaryMaxWords"`
 	} `json:"feedReply"`
 }
 
@@ -130,6 +133,9 @@ func InitConfig() {
 		ConfigStruct.FeedReply.MinPostWords = 0
 		ConfigStruct.FeedReply.MaxPostWords = 0
 		ConfigStruct.FeedReply.SummaryMode = false
+		ConfigStruct.FeedReply.SummaryRatio = 0.5
+		ConfigStruct.FeedReply.SummaryMinWords = 50
+		ConfigStruct.FeedReply.SummaryMaxWords = 800
 	}
 
 	loger.Loger.Info("[CFG]Init OK")

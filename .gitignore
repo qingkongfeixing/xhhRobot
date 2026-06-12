@@ -21,3 +21,8 @@ log/
 # OS
 .DS_Store
 Thumbs.db
+
+# SQLite 数据库
+sql.db
+sql.db-shm
+sql.db-wal

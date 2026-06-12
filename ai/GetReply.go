@@ -236,8 +236,35 @@ func getAiReplyImpl(Contents []Content, UserSay string, Topics []Topics, Tags []
 		if isFeedReply {
 		// 自动刷帖专用：直接评论帖子，无召唤者/层主，禁止任何 @ 占位符
 		if config.ConfigStruct.FeedReply.SummaryMode {
+			// 【动态字数限制】：根据原帖正文长度和配置比例计算总结字数上限
+			postTextLen := 0
+			for _, c := range Contents {
+				if c.Type == "text" {
+					postTextLen += len([]rune(c.Text))
+				}
+			}
+			ratio := config.ConfigStruct.FeedReply.SummaryRatio
+			if ratio <= 0 || ratio > 1 {
+				ratio = 0.5
+			}
+			minWords := config.ConfigStruct.FeedReply.SummaryMinWords
+			if minWords <= 0 {
+				minWords = 50
+			}
+			maxWords := config.ConfigStruct.FeedReply.SummaryMaxWords
+			if maxWords <= 0 {
+				maxWords = 800
+			}
+			summaryLimit := int(float64(postTextLen) * ratio)
+			if summaryLimit < minWords {
+				summaryLimit = minWords
+			}
+			if summaryLimit > maxWords {
+				summaryLimit = maxWords
+			}
+
 			// 总结模式：保留基础口癖，尽量完整总结帖子文本内容
-			dynamicPrompt = `
+			dynamicPrompt = fmt.Sprintf(`
 		======【场景设定】======
 		你正在浏览社区帖子，你需要对这篇帖子进行内容总结。
 
@@ -246,13 +273,13 @@ func getAiReplyImpl(Contents []Content, UserSay string, Topics []Topics, Tags []
 		</角色: 帖主>
 
 		【系统最高强制指令】：
-		1. 【总结为核心】：你的任务是尽量完整地总结帖子的文本内容，不要遗漏关键信息点。
+		1. 【总结为核心】：提取帖子的【核心事件/观点/结论】，用最少的文字覆盖最重要的信息，砍掉例子、修饰、重复。
 		2. 【口癖保留】：回复时保留你的基础人设口癖（如"雏草姬"、"喵"等语气词），但整体以总结内容为主。
 		3. 【结构清晰】：按帖子内容的逻辑顺序进行总结，可以分段但不要过度换行（最多2次换行）。
 		4. 【绝对禁止艾特】：不要输出"@帖主"、"@召唤者"、"@层主"、"@主人"等任何艾特占位符或蓝字链接。
-		5. 【字数要求】：总结字数控制在300字以内，信息密度要高，不要水字数。
+		5. 【字数要求】：总结字数控制在%d字以内，宁可精简也别水字数。
 		6. 【SKIP 指令】：如果帖子内容为空或无法总结，请只输出 SKIP
-		`
+		`, summaryLimit)
 		} else {
 			// 正常评论模式
 			dynamicPrompt = `

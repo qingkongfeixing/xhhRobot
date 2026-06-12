@@ -509,6 +509,10 @@
                                 <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">最低字数</label><input type="number" v-model="configObj.feedReply.minPostWords" class="form-control form-control-sm py-0" min="0" placeholder="0=不限制"></div>
                                 <div class="col-6"><label class="form-label small fw-bold text-muted mb-0">最高字数</label><input type="number" v-model="configObj.feedReply.maxPostWords" class="form-control form-control-sm py-0" min="0" placeholder="0=不限制"></div>
                                 <div class="col-12"><div class="bg-white border rounded d-flex align-items-center justify-content-start ps-2" style="height: 31px;"><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" v-model="configObj.feedReply.summaryMode" id="feedSummarySwitch"><label class="form-check-label text-dark ms-1 fw-bold" for="feedSummarySwitch" style="font-size:0.7rem;">{{ configObj.feedReply.summaryMode ? '📝 总结模式' : '💬 评论模式' }}</label></div></div></div>
+                                <div class="col-12 mt-1" v-if="configObj.feedReply.summaryMode"><small class="text-primary fw-bold">📐 总结字数动态控制（上限 = 原帖字数 × 比例，限制在最小~最大之间）</small></div>
+                                <div class="col-4" v-if="configObj.feedReply.summaryMode"><label class="form-label small fw-bold text-muted mb-0">比例 (0~1)</label><input type="number" v-model.number="configObj.feedReply.summaryRatio" class="form-control form-control-sm py-0" min="0.1" max="1" step="0.05" placeholder="默认0.5"></div>
+                                <div class="col-4" v-if="configObj.feedReply.summaryMode"><label class="form-label small fw-bold text-muted mb-0">最少字数</label><input type="number" v-model.number="configObj.feedReply.summaryMinWords" class="form-control form-control-sm py-0" min="50" placeholder="默认50"></div>
+                                <div class="col-4" v-if="configObj.feedReply.summaryMode"><label class="form-label small fw-bold text-muted mb-0">最多字数</label><input type="number" v-model.number="configObj.feedReply.summaryMaxWords" class="form-control form-control-sm py-0" min="100" placeholder="默认800"></div>
                                 <div class="col-6"><button @click="testFeedReply" class="btn btn-sm btn-info w-100 py-1 fw-bold">🧪 手动测试</button></div>
                             </div>
                         </div>
@@ -784,7 +788,7 @@
                 watch(customDate, () => { if (statPeriod.value === 'custom') { fetchStats(); fetchFeedStats(); } });
 
                 // ---------- 配置 ----------
-                const configObj = ref({ xhh: {}, database: {}, ai: {}, fallback: { enabled: false, checkDelaySeconds: 12, cookieFile: 'cookie2.json', deviceID: '', prompt: '' }, feedReply: { enabled: false, startHour: 8, endHour: 23, interval: 900, maxPerRun: 1, maxPerDay: 10, dryRun: true, minPostWords: 0, maxPostWords: 0, summaryMode: false } });
+                const configObj = ref({ xhh: {}, database: {}, ai: {}, fallback: { enabled: false, checkDelaySeconds: 12, cookieFile: 'cookie2.json', deviceID: '', prompt: '' }, feedReply: { enabled: false, startHour: 8, endHour: 23, interval: 900, maxPerRun: 1, maxPerDay: 10, dryRun: true, minPostWords: 0, maxPostWords: 0, summaryMode: false, summaryRatio: 0.5, summaryMinWords: 50, summaryMaxWords: 800 } });
                 const bannedWordsArr = ref([]);
                 const addBannedWord = () => { bannedWordsArr.value.push({ key: '', val: '' }); };
                 const removeBannedWord = (index) => { bannedWordsArr.value.splice(index, 1); };
@@ -830,7 +834,7 @@
                             data.fallback = { enabled: false, checkDelaySeconds: 12, cookieFile: 'cookie2.json', deviceID: '', prompt: '' };
                         }
                         if (!data.feedReply) {
-                            data.feedReply = { enabled: false, startHour: 8, endHour: 23, interval: 900, maxPerRun: 1, maxPerDay: 10, dryRun: true, minPostWords: 0, maxPostWords: 0, summaryMode: false };
+                            data.feedReply = { enabled: false, startHour: 8, endHour: 23, interval: 900, maxPerRun: 1, maxPerDay: 10, dryRun: true, minPostWords: 0, maxPostWords: 0, summaryMode: false, summaryRatio: 0.5, summaryMinWords: 50, summaryMaxWords: 800 };
                         }
                         if (!data.ai || !data.ai.vision_mode) {
                             if (!data.ai) data.ai = {};
@@ -880,6 +884,9 @@
                         configObj.value.feedReply.enabled = !!configObj.value.feedReply.enabled;
                         configObj.value.feedReply.dryRun = !!configObj.value.feedReply.dryRun;
                         configObj.value.feedReply.summaryMode = !!configObj.value.feedReply.summaryMode;
+                        configObj.value.feedReply.summaryRatio = Number(configObj.value.feedReply.summaryRatio) || 0.5;
+                        configObj.value.feedReply.summaryMinWords = Number(configObj.value.feedReply.summaryMinWords) || 50;
+                        configObj.value.feedReply.summaryMaxWords = Number(configObj.value.feedReply.summaryMaxWords) || 800;
                     }
                     const res = await fetch('/api/config', {
                         method: 'POST',

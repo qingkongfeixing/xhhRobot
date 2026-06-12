@@ -175,9 +175,18 @@ type CommStruct struct {
 }
 
 func GetComm(owners string) (CommArr []CommStruct) {
-	if owners == "" {
-		owners = "0"
+	// 过滤掉非数字的 owner 值（防止占位符文本导致 SQL 报错）
+	var validOwners []string
+	for _, o := range strings.Split(owners, ",") {
+		o = strings.TrimSpace(o)
+		if _, err := fmt.Sscanf(o, "%d", new(int)); err == nil {
+			validOwners = append(validOwners, o)
+		}
 	}
+	if len(validOwners) == 0 {
+		validOwners = []string{"0"}
+	}
+	owners = strings.Join(validOwners, ",")
 	ctx := context.Background()
 	query := fmt.Sprintf("SELECT link_id,comment_a_id,comment_root_id,comment_text,user_a_id,msg_id FROM at WHERE reply=false ORDER BY (user_a_id IN (%s)) DESC, msg_id ASC LIMIT 3", owners)
 
