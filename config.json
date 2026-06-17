@@ -1,0 +1,72 @@
+{
+  "xhh": {
+    "checkTime": 30,
+    "replyTime": 10,
+    "owner": "123456",
+    "deviceID": "test-device-001",
+    "baseUrl": "https://api.xiaoheihe.cn",
+    "webver": "",
+    "version": "",
+    "banned_words": {},
+    "blacklist": "",
+    "reply_only_owner": false,
+    "replyStartHour": 3,
+    "replyEndHour": 7,
+    "replyIntervalSeconds": 15,
+    "typingJitterMax": 4
+  },
+  "database": {
+    "type": "sqlite",
+    "db": "data.db",
+    "host": "",
+    "port": "",
+    "user": "",
+    "passwd": ""
+  },
+  "ai": {
+    "model": "gpt-4o",
+    "prompt": "你是一个活泼可爱的AI助手，名叫小菲。说话风格俏皮，喜欢用喵结尾~",
+    "baseUrl": "https://api.openai.com/v1",
+    "token": "sk-test123456",
+    "vision_model": "",
+    "vision_prompt": "请客观描述以下图片的内容和文字。",
+    "vision_base_url": "",
+    "vision_token": "",
+    "vision_fallback_model": "",
+    "vision_fallback_base_url": "",
+    "vision_fallback_token": "",
+    "vision_mode": "dual",
+    "enable_vision": false,
+    "enable_search": false,
+    "enable_thinking": false,
+    "reasoning_effort": "medium",
+    "enable_search_extension": false,
+    "max_post_images": 5,
+    "max_comment_images": 3
+  },
+  "fallback": {
+    "enabled": false,
+    "checkDelaySeconds": 12,
+    "cookieFile": "cookie2.json",
+    "deviceID": "",
+    "prompt": "",
+    "mainCooldownMinutes": 360
+  },
+  "feedReply": {
+    "enabled": false,
+    "startHour": 8,
+    "endHour": 23,
+    "interval": 900,
+    "maxPerRun": 1,
+    "maxPerDay": 10,
+    "dryRun": true,
+    "minPostWords": 0,
+    "maxPostWords": 0,
+    "summaryMode": false,
+    "summaryRatio": 0.5,
+    "summaryMinWords": 50,
+    "summaryMaxWords": 800,
+    "commentPrompt": "",
+    "summaryPrompt": ""
+  }
+}
