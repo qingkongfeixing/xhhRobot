@@ -1075,7 +1075,32 @@
                 const safeRemoveStorage = (key) => { try { localStorage.removeItem(key); } catch(e) {} };
                 const isGuest = computed(() => safeGetStorage('taffy_role') === 'guest');
                 const blurBtn = (e) => { if (e && e.currentTarget) { e.currentTarget.blur(); e.currentTarget.classList.remove('active'); } };
-                const toggleStats = () => { showStats.value = !showStats.value; if (document.activeElement) document.activeElement.blur(); };
+                let _lastStatsToggleTime = 0;
+                let _pageResuming = false;
+                let _resumeLockTimer = null;
+                // 仅刷帖回复模式：息屏后锁定，被拦截的点击会自动延长锁定
+                document.addEventListener('visibilitychange', () => {
+                    if (replyMode.value !== 'feed') return;
+                    if (!document.hidden) {
+                        _pageResuming = true;
+                        _extendResumeLock();
+                    }
+                });
+                function _extendResumeLock() {
+                    if (_resumeLockTimer) clearTimeout(_resumeLockTimer);
+                    _resumeLockTimer = setTimeout(() => { _pageResuming = false; }, 2000);
+                }
+                const toggleStats = () => {
+                    if (_pageResuming) {
+                        _extendResumeLock();
+                        return;
+                    }
+                    const now = Date.now();
+                    if (now - _lastStatsToggleTime < 500) return;
+                    _lastStatsToggleTime = now;
+                    showStats.value = !showStats.value;
+                    if (document.activeElement) document.activeElement.blur();
+                };
 
                 // ---------- 桌面布局 ----------
                 const splitContainer = ref(null);
